@@ -1,0 +1,35 @@
+{
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "dockerComposeFile": "docker-compose.yml",
+  "postCreateCommand": "./.devcontainer/sh/postCreateCommand.sh",
+  "features": {
+    "docker-from-docker": {
+      "version": "latest"
+    }
+  },
+  "forwardPorts": [],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "#terminal.integrated.defaultProfile.linux#": "/bin/bash",
+        "#terminal.integrated.defaultProfile.windows#": "/bin/bash",
+        "#terminal.integrated.defaultProfile.osx#": "/bin/bash",
+        "terminal.integrated.shellIntegration.enabled": false,
+        "typescript.preferences.importModuleSpecifier": "project-relative",
+        "files.trimTrailingWhitespace": true,
+        "explorer.compactFolders": false,
+        "editor.guides.bracketPairs": true,
+        "editor.bracketPairColorization.enabled": true,
+        "editor.codeActionsOnSave": [
+          "source.addMissingImports",
+          "source.fixAll.eslint"
+        ]
+      },
+      "extensions": [
+        "eamodio.gitlens",
+        "GitHub.copilot"
+      ]
+    }
+  }
+}
