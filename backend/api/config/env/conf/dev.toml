@@ -1,0 +1,4 @@
+[build]
+cmd = "go build -o ./tmp/main -ldflags \"-X 'api/config/env.Env=development'\""
+bin = "tmp/main"
+full_bin = "./tmp/main"
