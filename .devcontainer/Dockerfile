@@ -40,3 +40,10 @@ RUN curl -sSfL https://raw.githubusercontent.com/cosmtrek/air/master/install.sh 
 
 # Go Atlas のインストール
 RUN curl -sSfL https://atlasgo.sh | sh -s -- -b $(go env GOPATH)/bin
+
+# openapi-generator-cli のインストール
+RUN sudo apt update \
+  && sudo apt install -y maven \
+  && mkdir -p ~/bin/openapitools \
+  && curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > /home/${USERNAME}/bin/openapi-generator-cli \
+  && chmod u+x /home/${USERNAME}/bin/openapi-generator-cli

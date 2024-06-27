@@ -1,17 +1,12 @@
 package main
 
 import (
-	"fmt"
+	sw "api/controllers/restapi"
 	"log"
-
-	"api/config/env"
 )
 
 func main() {
-	// Load configuration
-	cfg, err := env.GetConfig()
-	if err != nil {
-		log.Fatal("Failed to load config: ", err)
-	}
-	fmt.Println("env:", cfg["ENV"])
+	// RESTful API
+	router := sw.NewRouter(sw.ApiHandleFunctions{})
+	log.Fatal(router.Run(":3000"))
 }

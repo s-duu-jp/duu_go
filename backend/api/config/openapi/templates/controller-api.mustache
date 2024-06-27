@@ -1,0 +1,25 @@
+{{>partial_header}}
+package {{packageName}}
+
+{{#operations}}
+import (
+	"api/handlers"
+
+	"github.com/gin-gonic/gin"
+)
+
+type {{classname}} struct {
+}
+
+{{#operation}}
+// {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
+// {{{.}}} {{/summary}}
+{{#isDeprecated}}
+// Deprecated
+{{/isDeprecated}}
+func (api *{{classname}}) {{nickname}}(c *gin.Context) {
+	handlers.{{operationId}}(c)
+}
+
+{{/operation}}
+{{/operations}}
