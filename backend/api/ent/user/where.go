@@ -53,6 +53,656 @@ func IDLTE(id int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
 }
 
+// Sid applies equality check predicate on the "sid" field. It's identical to SidEQ.
+func Sid(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSid, v))
+}
+
+// UID applies equality check predicate on the "uid" field. It's identical to UIDEQ.
+func UID(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldUID, v))
+}
+
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldName, v))
+}
+
+// Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
+func Email(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldEmail, v))
+}
+
+// Password applies equality check predicate on the "password" field. It's identical to PasswordEQ.
+func Password(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPassword, v))
+}
+
+// RoleType applies equality check predicate on the "role_type" field. It's identical to RoleTypeEQ.
+func RoleType(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRoleType, v))
+}
+
+// StatusType applies equality check predicate on the "status_type" field. It's identical to StatusTypeEQ.
+func StatusType(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldStatusType, v))
+}
+
+// OauthType applies equality check predicate on the "oauth_type" field. It's identical to OauthTypeEQ.
+func OauthType(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldOauthType, v))
+}
+
+// Sub applies equality check predicate on the "sub" field. It's identical to SubEQ.
+func Sub(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSub, v))
+}
+
+// SidEQ applies the EQ predicate on the "sid" field.
+func SidEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSid, v))
+}
+
+// SidNEQ applies the NEQ predicate on the "sid" field.
+func SidNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSid, v))
+}
+
+// SidIn applies the In predicate on the "sid" field.
+func SidIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSid, vs...))
+}
+
+// SidNotIn applies the NotIn predicate on the "sid" field.
+func SidNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSid, vs...))
+}
+
+// SidGT applies the GT predicate on the "sid" field.
+func SidGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSid, v))
+}
+
+// SidGTE applies the GTE predicate on the "sid" field.
+func SidGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSid, v))
+}
+
+// SidLT applies the LT predicate on the "sid" field.
+func SidLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSid, v))
+}
+
+// SidLTE applies the LTE predicate on the "sid" field.
+func SidLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSid, v))
+}
+
+// SidContains applies the Contains predicate on the "sid" field.
+func SidContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldSid, v))
+}
+
+// SidHasPrefix applies the HasPrefix predicate on the "sid" field.
+func SidHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldSid, v))
+}
+
+// SidHasSuffix applies the HasSuffix predicate on the "sid" field.
+func SidHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldSid, v))
+}
+
+// SidEqualFold applies the EqualFold predicate on the "sid" field.
+func SidEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldSid, v))
+}
+
+// SidContainsFold applies the ContainsFold predicate on the "sid" field.
+func SidContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldSid, v))
+}
+
+// UIDEQ applies the EQ predicate on the "uid" field.
+func UIDEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldUID, v))
+}
+
+// UIDNEQ applies the NEQ predicate on the "uid" field.
+func UIDNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldUID, v))
+}
+
+// UIDIn applies the In predicate on the "uid" field.
+func UIDIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldUID, vs...))
+}
+
+// UIDNotIn applies the NotIn predicate on the "uid" field.
+func UIDNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldUID, vs...))
+}
+
+// UIDGT applies the GT predicate on the "uid" field.
+func UIDGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldUID, v))
+}
+
+// UIDGTE applies the GTE predicate on the "uid" field.
+func UIDGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldUID, v))
+}
+
+// UIDLT applies the LT predicate on the "uid" field.
+func UIDLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldUID, v))
+}
+
+// UIDLTE applies the LTE predicate on the "uid" field.
+func UIDLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldUID, v))
+}
+
+// UIDContains applies the Contains predicate on the "uid" field.
+func UIDContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldUID, v))
+}
+
+// UIDHasPrefix applies the HasPrefix predicate on the "uid" field.
+func UIDHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldUID, v))
+}
+
+// UIDHasSuffix applies the HasSuffix predicate on the "uid" field.
+func UIDHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldUID, v))
+}
+
+// UIDEqualFold applies the EqualFold predicate on the "uid" field.
+func UIDEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldUID, v))
+}
+
+// UIDContainsFold applies the ContainsFold predicate on the "uid" field.
+func UIDContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldUID, v))
+}
+
+// NameEQ applies the EQ predicate on the "name" field.
+func NameEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldName, v))
+}
+
+// NameNEQ applies the NEQ predicate on the "name" field.
+func NameNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldName, v))
+}
+
+// NameIn applies the In predicate on the "name" field.
+func NameIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldName, vs...))
+}
+
+// NameNotIn applies the NotIn predicate on the "name" field.
+func NameNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldName, vs...))
+}
+
+// NameGT applies the GT predicate on the "name" field.
+func NameGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldName, v))
+}
+
+// NameGTE applies the GTE predicate on the "name" field.
+func NameGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldName, v))
+}
+
+// NameLT applies the LT predicate on the "name" field.
+func NameLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldName, v))
+}
+
+// NameLTE applies the LTE predicate on the "name" field.
+func NameLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldName, v))
+}
+
+// NameContains applies the Contains predicate on the "name" field.
+func NameContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldName, v))
+}
+
+// NameHasPrefix applies the HasPrefix predicate on the "name" field.
+func NameHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldName, v))
+}
+
+// NameHasSuffix applies the HasSuffix predicate on the "name" field.
+func NameHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldName, v))
+}
+
+// NameEqualFold applies the EqualFold predicate on the "name" field.
+func NameEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldName, v))
+}
+
+// NameContainsFold applies the ContainsFold predicate on the "name" field.
+func NameContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldName, v))
+}
+
+// EmailEQ applies the EQ predicate on the "email" field.
+func EmailEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldEmail, v))
+}
+
+// EmailNEQ applies the NEQ predicate on the "email" field.
+func EmailNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldEmail, v))
+}
+
+// EmailIn applies the In predicate on the "email" field.
+func EmailIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldEmail, vs...))
+}
+
+// EmailNotIn applies the NotIn predicate on the "email" field.
+func EmailNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldEmail, vs...))
+}
+
+// EmailGT applies the GT predicate on the "email" field.
+func EmailGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldEmail, v))
+}
+
+// EmailGTE applies the GTE predicate on the "email" field.
+func EmailGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldEmail, v))
+}
+
+// EmailLT applies the LT predicate on the "email" field.
+func EmailLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldEmail, v))
+}
+
+// EmailLTE applies the LTE predicate on the "email" field.
+func EmailLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldEmail, v))
+}
+
+// EmailContains applies the Contains predicate on the "email" field.
+func EmailContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldEmail, v))
+}
+
+// EmailHasPrefix applies the HasPrefix predicate on the "email" field.
+func EmailHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldEmail, v))
+}
+
+// EmailHasSuffix applies the HasSuffix predicate on the "email" field.
+func EmailHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldEmail, v))
+}
+
+// EmailEqualFold applies the EqualFold predicate on the "email" field.
+func EmailEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldEmail, v))
+}
+
+// EmailContainsFold applies the ContainsFold predicate on the "email" field.
+func EmailContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldEmail, v))
+}
+
+// PasswordEQ applies the EQ predicate on the "password" field.
+func PasswordEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPassword, v))
+}
+
+// PasswordNEQ applies the NEQ predicate on the "password" field.
+func PasswordNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPassword, v))
+}
+
+// PasswordIn applies the In predicate on the "password" field.
+func PasswordIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPassword, vs...))
+}
+
+// PasswordNotIn applies the NotIn predicate on the "password" field.
+func PasswordNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPassword, vs...))
+}
+
+// PasswordGT applies the GT predicate on the "password" field.
+func PasswordGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPassword, v))
+}
+
+// PasswordGTE applies the GTE predicate on the "password" field.
+func PasswordGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPassword, v))
+}
+
+// PasswordLT applies the LT predicate on the "password" field.
+func PasswordLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPassword, v))
+}
+
+// PasswordLTE applies the LTE predicate on the "password" field.
+func PasswordLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPassword, v))
+}
+
+// PasswordContains applies the Contains predicate on the "password" field.
+func PasswordContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldPassword, v))
+}
+
+// PasswordHasPrefix applies the HasPrefix predicate on the "password" field.
+func PasswordHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldPassword, v))
+}
+
+// PasswordHasSuffix applies the HasSuffix predicate on the "password" field.
+func PasswordHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldPassword, v))
+}
+
+// PasswordIsNil applies the IsNil predicate on the "password" field.
+func PasswordIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldPassword))
+}
+
+// PasswordNotNil applies the NotNil predicate on the "password" field.
+func PasswordNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldPassword))
+}
+
+// PasswordEqualFold applies the EqualFold predicate on the "password" field.
+func PasswordEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldPassword, v))
+}
+
+// PasswordContainsFold applies the ContainsFold predicate on the "password" field.
+func PasswordContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldPassword, v))
+}
+
+// RoleTypeEQ applies the EQ predicate on the "role_type" field.
+func RoleTypeEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldRoleType, v))
+}
+
+// RoleTypeNEQ applies the NEQ predicate on the "role_type" field.
+func RoleTypeNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldRoleType, v))
+}
+
+// RoleTypeIn applies the In predicate on the "role_type" field.
+func RoleTypeIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldRoleType, vs...))
+}
+
+// RoleTypeNotIn applies the NotIn predicate on the "role_type" field.
+func RoleTypeNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldRoleType, vs...))
+}
+
+// RoleTypeGT applies the GT predicate on the "role_type" field.
+func RoleTypeGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldRoleType, v))
+}
+
+// RoleTypeGTE applies the GTE predicate on the "role_type" field.
+func RoleTypeGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldRoleType, v))
+}
+
+// RoleTypeLT applies the LT predicate on the "role_type" field.
+func RoleTypeLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldRoleType, v))
+}
+
+// RoleTypeLTE applies the LTE predicate on the "role_type" field.
+func RoleTypeLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldRoleType, v))
+}
+
+// RoleTypeContains applies the Contains predicate on the "role_type" field.
+func RoleTypeContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldRoleType, v))
+}
+
+// RoleTypeHasPrefix applies the HasPrefix predicate on the "role_type" field.
+func RoleTypeHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldRoleType, v))
+}
+
+// RoleTypeHasSuffix applies the HasSuffix predicate on the "role_type" field.
+func RoleTypeHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldRoleType, v))
+}
+
+// RoleTypeEqualFold applies the EqualFold predicate on the "role_type" field.
+func RoleTypeEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldRoleType, v))
+}
+
+// RoleTypeContainsFold applies the ContainsFold predicate on the "role_type" field.
+func RoleTypeContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldRoleType, v))
+}
+
+// StatusTypeEQ applies the EQ predicate on the "status_type" field.
+func StatusTypeEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldStatusType, v))
+}
+
+// StatusTypeNEQ applies the NEQ predicate on the "status_type" field.
+func StatusTypeNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldStatusType, v))
+}
+
+// StatusTypeIn applies the In predicate on the "status_type" field.
+func StatusTypeIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldStatusType, vs...))
+}
+
+// StatusTypeNotIn applies the NotIn predicate on the "status_type" field.
+func StatusTypeNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldStatusType, vs...))
+}
+
+// StatusTypeGT applies the GT predicate on the "status_type" field.
+func StatusTypeGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldStatusType, v))
+}
+
+// StatusTypeGTE applies the GTE predicate on the "status_type" field.
+func StatusTypeGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldStatusType, v))
+}
+
+// StatusTypeLT applies the LT predicate on the "status_type" field.
+func StatusTypeLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldStatusType, v))
+}
+
+// StatusTypeLTE applies the LTE predicate on the "status_type" field.
+func StatusTypeLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldStatusType, v))
+}
+
+// StatusTypeContains applies the Contains predicate on the "status_type" field.
+func StatusTypeContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldStatusType, v))
+}
+
+// StatusTypeHasPrefix applies the HasPrefix predicate on the "status_type" field.
+func StatusTypeHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldStatusType, v))
+}
+
+// StatusTypeHasSuffix applies the HasSuffix predicate on the "status_type" field.
+func StatusTypeHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldStatusType, v))
+}
+
+// StatusTypeEqualFold applies the EqualFold predicate on the "status_type" field.
+func StatusTypeEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldStatusType, v))
+}
+
+// StatusTypeContainsFold applies the ContainsFold predicate on the "status_type" field.
+func StatusTypeContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldStatusType, v))
+}
+
+// OauthTypeEQ applies the EQ predicate on the "oauth_type" field.
+func OauthTypeEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldOauthType, v))
+}
+
+// OauthTypeNEQ applies the NEQ predicate on the "oauth_type" field.
+func OauthTypeNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldOauthType, v))
+}
+
+// OauthTypeIn applies the In predicate on the "oauth_type" field.
+func OauthTypeIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldOauthType, vs...))
+}
+
+// OauthTypeNotIn applies the NotIn predicate on the "oauth_type" field.
+func OauthTypeNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldOauthType, vs...))
+}
+
+// OauthTypeGT applies the GT predicate on the "oauth_type" field.
+func OauthTypeGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldOauthType, v))
+}
+
+// OauthTypeGTE applies the GTE predicate on the "oauth_type" field.
+func OauthTypeGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldOauthType, v))
+}
+
+// OauthTypeLT applies the LT predicate on the "oauth_type" field.
+func OauthTypeLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldOauthType, v))
+}
+
+// OauthTypeLTE applies the LTE predicate on the "oauth_type" field.
+func OauthTypeLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldOauthType, v))
+}
+
+// OauthTypeContains applies the Contains predicate on the "oauth_type" field.
+func OauthTypeContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldOauthType, v))
+}
+
+// OauthTypeHasPrefix applies the HasPrefix predicate on the "oauth_type" field.
+func OauthTypeHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldOauthType, v))
+}
+
+// OauthTypeHasSuffix applies the HasSuffix predicate on the "oauth_type" field.
+func OauthTypeHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldOauthType, v))
+}
+
+// OauthTypeEqualFold applies the EqualFold predicate on the "oauth_type" field.
+func OauthTypeEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldOauthType, v))
+}
+
+// OauthTypeContainsFold applies the ContainsFold predicate on the "oauth_type" field.
+func OauthTypeContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldOauthType, v))
+}
+
+// SubEQ applies the EQ predicate on the "sub" field.
+func SubEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSub, v))
+}
+
+// SubNEQ applies the NEQ predicate on the "sub" field.
+func SubNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSub, v))
+}
+
+// SubIn applies the In predicate on the "sub" field.
+func SubIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSub, vs...))
+}
+
+// SubNotIn applies the NotIn predicate on the "sub" field.
+func SubNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSub, vs...))
+}
+
+// SubGT applies the GT predicate on the "sub" field.
+func SubGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSub, v))
+}
+
+// SubGTE applies the GTE predicate on the "sub" field.
+func SubGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSub, v))
+}
+
+// SubLT applies the LT predicate on the "sub" field.
+func SubLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSub, v))
+}
+
+// SubLTE applies the LTE predicate on the "sub" field.
+func SubLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSub, v))
+}
+
+// SubContains applies the Contains predicate on the "sub" field.
+func SubContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldSub, v))
+}
+
+// SubHasPrefix applies the HasPrefix predicate on the "sub" field.
+func SubHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldSub, v))
+}
+
+// SubHasSuffix applies the HasSuffix predicate on the "sub" field.
+func SubHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldSub, v))
+}
+
+// SubIsNil applies the IsNil predicate on the "sub" field.
+func SubIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldSub))
+}
+
+// SubNotNil applies the NotNil predicate on the "sub" field.
+func SubNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldSub))
+}
+
+// SubEqualFold applies the EqualFold predicate on the "sub" field.
+func SubEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldSub, v))
+}
+
+// SubContainsFold applies the ContainsFold predicate on the "sub" field.
+func SubContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldSub, v))
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

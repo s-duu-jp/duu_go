@@ -13,9 +13,27 @@ import (
 
 // User is the model entity for the User schema.
 type User struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID int `json:"id,omitempty"`
+	// Sid holds the value of the "sid" field.
+	Sid string `json:"sid,omitempty"`
+	// UID holds the value of the "uid" field.
+	UID string `json:"uid,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
+	// Password holds the value of the "password" field.
+	Password string `json:"-"`
+	// RoleType holds the value of the "role_type" field.
+	RoleType string `json:"role_type,omitempty"`
+	// StatusType holds the value of the "status_type" field.
+	StatusType string `json:"status_type,omitempty"`
+	// OauthType holds the value of the "oauth_type" field.
+	OauthType string `json:"oauth_type,omitempty"`
+	// Sub holds the value of the "sub" field.
+	Sub          string `json:"sub,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -26,6 +44,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
+		case user.FieldSid, user.FieldUID, user.FieldName, user.FieldEmail, user.FieldPassword, user.FieldRoleType, user.FieldStatusType, user.FieldOauthType, user.FieldSub:
+			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -47,6 +67,60 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			u.ID = int(value.Int64)
+		case user.FieldSid:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sid", values[i])
+			} else if value.Valid {
+				u.Sid = value.String
+			}
+		case user.FieldUID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field uid", values[i])
+			} else if value.Valid {
+				u.UID = value.String
+			}
+		case user.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				u.Name = value.String
+			}
+		case user.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				u.Email = value.String
+			}
+		case user.FieldPassword:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password", values[i])
+			} else if value.Valid {
+				u.Password = value.String
+			}
+		case user.FieldRoleType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field role_type", values[i])
+			} else if value.Valid {
+				u.RoleType = value.String
+			}
+		case user.FieldStatusType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status_type", values[i])
+			} else if value.Valid {
+				u.StatusType = value.String
+			}
+		case user.FieldOauthType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field oauth_type", values[i])
+			} else if value.Valid {
+				u.OauthType = value.String
+			}
+		case user.FieldSub:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sub", values[i])
+			} else if value.Valid {
+				u.Sub = value.String
+			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -82,7 +156,32 @@ func (u *User) Unwrap() *User {
 func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
-	builder.WriteString(fmt.Sprintf("id=%v", u.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
+	builder.WriteString("sid=")
+	builder.WriteString(u.Sid)
+	builder.WriteString(", ")
+	builder.WriteString("uid=")
+	builder.WriteString(u.UID)
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(u.Name)
+	builder.WriteString(", ")
+	builder.WriteString("email=")
+	builder.WriteString(u.Email)
+	builder.WriteString(", ")
+	builder.WriteString("password=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("role_type=")
+	builder.WriteString(u.RoleType)
+	builder.WriteString(", ")
+	builder.WriteString("status_type=")
+	builder.WriteString(u.StatusType)
+	builder.WriteString(", ")
+	builder.WriteString("oauth_type=")
+	builder.WriteString(u.OauthType)
+	builder.WriteString(", ")
+	builder.WriteString("sub=")
+	builder.WriteString(u.Sub)
 	builder.WriteByte(')')
 	return builder.String()
 }

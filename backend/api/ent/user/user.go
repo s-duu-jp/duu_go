@@ -11,6 +11,24 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldSid holds the string denoting the sid field in the database.
+	FieldSid = "sid"
+	// FieldUID holds the string denoting the uid field in the database.
+	FieldUID = "uid"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
+	// FieldPassword holds the string denoting the password field in the database.
+	FieldPassword = "password"
+	// FieldRoleType holds the string denoting the role_type field in the database.
+	FieldRoleType = "role_type"
+	// FieldStatusType holds the string denoting the status_type field in the database.
+	FieldStatusType = "status_type"
+	// FieldOauthType holds the string denoting the oauth_type field in the database.
+	FieldOauthType = "oauth_type"
+	// FieldSub holds the string denoting the sub field in the database.
+	FieldSub = "sub"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 )
@@ -18,6 +36,15 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldSid,
+	FieldUID,
+	FieldName,
+	FieldEmail,
+	FieldPassword,
+	FieldRoleType,
+	FieldStatusType,
+	FieldOauthType,
+	FieldSub,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -30,10 +57,60 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// DefaultSid holds the default value on creation for the "sid" field.
+	DefaultSid func() string
+)
+
 // OrderOption defines the ordering options for the User queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// BySid orders the results by the sid field.
+func BySid(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSid, opts...).ToFunc()
+}
+
+// ByUID orders the results by the uid field.
+func ByUID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByPassword orders the results by the password field.
+func ByPassword(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPassword, opts...).ToFunc()
+}
+
+// ByRoleType orders the results by the role_type field.
+func ByRoleType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRoleType, opts...).ToFunc()
+}
+
+// ByStatusType orders the results by the status_type field.
+func ByStatusType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatusType, opts...).ToFunc()
+}
+
+// ByOauthType orders the results by the oauth_type field.
+func ByOauthType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOauthType, opts...).ToFunc()
+}
+
+// BySub orders the results by the sub field.
+func BySub(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub, opts...).ToFunc()
 }

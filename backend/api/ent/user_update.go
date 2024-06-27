@@ -27,6 +27,144 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
+// SetSid sets the "sid" field.
+func (uu *UserUpdate) SetSid(s string) *UserUpdate {
+	uu.mutation.SetSid(s)
+	return uu
+}
+
+// SetNillableSid sets the "sid" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableSid(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetSid(*s)
+	}
+	return uu
+}
+
+// SetUID sets the "uid" field.
+func (uu *UserUpdate) SetUID(s string) *UserUpdate {
+	uu.mutation.SetUID(s)
+	return uu
+}
+
+// SetNillableUID sets the "uid" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableUID(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetUID(*s)
+	}
+	return uu
+}
+
+// SetName sets the "name" field.
+func (uu *UserUpdate) SetName(s string) *UserUpdate {
+	uu.mutation.SetName(s)
+	return uu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetName(*s)
+	}
+	return uu
+}
+
+// SetEmail sets the "email" field.
+func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
+	uu.mutation.SetEmail(s)
+	return uu
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetEmail(*s)
+	}
+	return uu
+}
+
+// SetPassword sets the "password" field.
+func (uu *UserUpdate) SetPassword(s string) *UserUpdate {
+	uu.mutation.SetPassword(s)
+	return uu
+}
+
+// SetNillablePassword sets the "password" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePassword(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPassword(*s)
+	}
+	return uu
+}
+
+// ClearPassword clears the value of the "password" field.
+func (uu *UserUpdate) ClearPassword() *UserUpdate {
+	uu.mutation.ClearPassword()
+	return uu
+}
+
+// SetRoleType sets the "role_type" field.
+func (uu *UserUpdate) SetRoleType(s string) *UserUpdate {
+	uu.mutation.SetRoleType(s)
+	return uu
+}
+
+// SetNillableRoleType sets the "role_type" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableRoleType(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetRoleType(*s)
+	}
+	return uu
+}
+
+// SetStatusType sets the "status_type" field.
+func (uu *UserUpdate) SetStatusType(s string) *UserUpdate {
+	uu.mutation.SetStatusType(s)
+	return uu
+}
+
+// SetNillableStatusType sets the "status_type" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableStatusType(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetStatusType(*s)
+	}
+	return uu
+}
+
+// SetOauthType sets the "oauth_type" field.
+func (uu *UserUpdate) SetOauthType(s string) *UserUpdate {
+	uu.mutation.SetOauthType(s)
+	return uu
+}
+
+// SetNillableOauthType sets the "oauth_type" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableOauthType(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetOauthType(*s)
+	}
+	return uu
+}
+
+// SetSub sets the "sub" field.
+func (uu *UserUpdate) SetSub(s string) *UserUpdate {
+	uu.mutation.SetSub(s)
+	return uu
+}
+
+// SetNillableSub sets the "sub" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableSub(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetSub(*s)
+	}
+	return uu
+}
+
+// ClearSub clears the value of the "sub" field.
+func (uu *UserUpdate) ClearSub() *UserUpdate {
+	uu.mutation.ClearSub()
+	return uu
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -68,6 +206,39 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := uu.mutation.Sid(); ok {
+		_spec.SetField(user.FieldSid, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.UID(); ok {
+		_spec.SetField(user.FieldUID, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Name(); ok {
+		_spec.SetField(user.FieldName, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Password(); ok {
+		_spec.SetField(user.FieldPassword, field.TypeString, value)
+	}
+	if uu.mutation.PasswordCleared() {
+		_spec.ClearField(user.FieldPassword, field.TypeString)
+	}
+	if value, ok := uu.mutation.RoleType(); ok {
+		_spec.SetField(user.FieldRoleType, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.StatusType(); ok {
+		_spec.SetField(user.FieldStatusType, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.OauthType(); ok {
+		_spec.SetField(user.FieldOauthType, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Sub(); ok {
+		_spec.SetField(user.FieldSub, field.TypeString, value)
+	}
+	if uu.mutation.SubCleared() {
+		_spec.ClearField(user.FieldSub, field.TypeString)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -86,6 +257,144 @@ type UserUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserMutation
+}
+
+// SetSid sets the "sid" field.
+func (uuo *UserUpdateOne) SetSid(s string) *UserUpdateOne {
+	uuo.mutation.SetSid(s)
+	return uuo
+}
+
+// SetNillableSid sets the "sid" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableSid(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetSid(*s)
+	}
+	return uuo
+}
+
+// SetUID sets the "uid" field.
+func (uuo *UserUpdateOne) SetUID(s string) *UserUpdateOne {
+	uuo.mutation.SetUID(s)
+	return uuo
+}
+
+// SetNillableUID sets the "uid" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableUID(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetUID(*s)
+	}
+	return uuo
+}
+
+// SetName sets the "name" field.
+func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
+	uuo.mutation.SetName(s)
+	return uuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetName(*s)
+	}
+	return uuo
+}
+
+// SetEmail sets the "email" field.
+func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
+	uuo.mutation.SetEmail(s)
+	return uuo
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetEmail(*s)
+	}
+	return uuo
+}
+
+// SetPassword sets the "password" field.
+func (uuo *UserUpdateOne) SetPassword(s string) *UserUpdateOne {
+	uuo.mutation.SetPassword(s)
+	return uuo
+}
+
+// SetNillablePassword sets the "password" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePassword(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPassword(*s)
+	}
+	return uuo
+}
+
+// ClearPassword clears the value of the "password" field.
+func (uuo *UserUpdateOne) ClearPassword() *UserUpdateOne {
+	uuo.mutation.ClearPassword()
+	return uuo
+}
+
+// SetRoleType sets the "role_type" field.
+func (uuo *UserUpdateOne) SetRoleType(s string) *UserUpdateOne {
+	uuo.mutation.SetRoleType(s)
+	return uuo
+}
+
+// SetNillableRoleType sets the "role_type" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableRoleType(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetRoleType(*s)
+	}
+	return uuo
+}
+
+// SetStatusType sets the "status_type" field.
+func (uuo *UserUpdateOne) SetStatusType(s string) *UserUpdateOne {
+	uuo.mutation.SetStatusType(s)
+	return uuo
+}
+
+// SetNillableStatusType sets the "status_type" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableStatusType(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetStatusType(*s)
+	}
+	return uuo
+}
+
+// SetOauthType sets the "oauth_type" field.
+func (uuo *UserUpdateOne) SetOauthType(s string) *UserUpdateOne {
+	uuo.mutation.SetOauthType(s)
+	return uuo
+}
+
+// SetNillableOauthType sets the "oauth_type" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableOauthType(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetOauthType(*s)
+	}
+	return uuo
+}
+
+// SetSub sets the "sub" field.
+func (uuo *UserUpdateOne) SetSub(s string) *UserUpdateOne {
+	uuo.mutation.SetSub(s)
+	return uuo
+}
+
+// SetNillableSub sets the "sub" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableSub(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetSub(*s)
+	}
+	return uuo
+}
+
+// ClearSub clears the value of the "sub" field.
+func (uuo *UserUpdateOne) ClearSub() *UserUpdateOne {
+	uuo.mutation.ClearSub()
+	return uuo
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -158,6 +467,39 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := uuo.mutation.Sid(); ok {
+		_spec.SetField(user.FieldSid, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.UID(); ok {
+		_spec.SetField(user.FieldUID, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Name(); ok {
+		_spec.SetField(user.FieldName, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Password(); ok {
+		_spec.SetField(user.FieldPassword, field.TypeString, value)
+	}
+	if uuo.mutation.PasswordCleared() {
+		_spec.ClearField(user.FieldPassword, field.TypeString)
+	}
+	if value, ok := uuo.mutation.RoleType(); ok {
+		_spec.SetField(user.FieldRoleType, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.StatusType(); ok {
+		_spec.SetField(user.FieldStatusType, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.OauthType(); ok {
+		_spec.SetField(user.FieldOauthType, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Sub(); ok {
+		_spec.SetField(user.FieldSub, field.TypeString, value)
+	}
+	if uuo.mutation.SubCleared() {
+		_spec.ClearField(user.FieldSub, field.TypeString)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

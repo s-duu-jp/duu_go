@@ -1,0 +1,1 @@
+CREATE DATABASE IF NOT EXISTS duu_go_dev;
