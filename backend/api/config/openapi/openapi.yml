@@ -153,3 +153,35 @@ paths:
                   error:
                     type: string
                     example: Unexpected error
+
+  /sample:
+    post:
+      tags:
+        - Sample
+      summary: サンプルPOSTリクエスト
+      operationId: PostSample
+      requestBody:
+        description: サンプルリクエストパラメータ
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                udi:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: pass
+      responses:
+        '200':
+          description: リクエスト成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok

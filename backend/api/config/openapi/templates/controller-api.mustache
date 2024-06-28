@@ -9,10 +9,10 @@ import (
 )
 
 type {{classname}} struct {
-	handlers handlers.AuthenticationHandlers
+	handlers handlers.{{/vendorExtensions.x-go-custom-tag}}Handlers
 }
 
-func New{{classname}}(handlers handlers.AuthenticationHandlers) {{classname}} {
+func New{{classname}}(handlers handlers.{{/vendorExtensions.x-go-custom-tag}}Handlers) {{classname}} {
 	return {{classname}}{handlers: handlers}
 }
 

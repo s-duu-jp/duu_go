@@ -16,10 +16,10 @@ import (
 )
 
 type AuthenticationAPI struct {
-	handlers handlers.AuthenticationHandlers
+	handlers handlers.Handlers
 }
 
-func NewAuthenticationAPI(handlers handlers.AuthenticationHandlers) AuthenticationAPI {
+func NewAuthenticationAPI(handlers handlers.Handlers) AuthenticationAPI {
 	return AuthenticationAPI{handlers: handlers}
 }
 
