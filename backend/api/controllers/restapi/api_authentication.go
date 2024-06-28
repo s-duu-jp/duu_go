@@ -16,32 +16,28 @@ import (
 )
 
 type AuthenticationAPI struct {
+	handlers handlers.AuthenticationHandlers
+}
+
+func NewAuthenticationAPI(handlers handlers.AuthenticationHandlers) AuthenticationAPI {
+	return AuthenticationAPI{handlers: handlers}
 }
 
 // Post /login
 // ログイン 
 func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
-	factory := func() interface{} {
-		return &PostLoginRequest{}
-	}
-	handlers.PostLogin(c, factory)
+	api.handlers.PostLogin(c)
 }
 
 // Post /logout
 // ログアウト 
 func (api *AuthenticationAPI) PostLogout(c *gin.Context) {
-	factory := func() interface{} {
-		return &PostLogoutRequest{}
-	}
-	handlers.PostLogout(c, factory)
+	api.handlers.PostLogout(c)
 }
 
 // Post /refresh-token
 // トークン再発行 
 func (api *AuthenticationAPI) PostRefreshToken(c *gin.Context) {
-	factory := func() interface{} {
-		return &PostRefreshTokenRequest{}
-	}
-	handlers.PostRefreshToken(c, factory)
+	api.handlers.PostRefreshToken(c)
 }
 

@@ -9,6 +9,11 @@ import (
 )
 
 type {{classname}} struct {
+	handlers handlers.AuthenticationHandlers
+}
+
+func New{{classname}}(handlers handlers.AuthenticationHandlers) {{classname}} {
+	return {{classname}}{handlers: handlers}
 }
 
 {{#operation}}
@@ -18,10 +23,7 @@ type {{classname}} struct {
 // Deprecated
 {{/isDeprecated}}
 func (api *{{classname}}) {{nickname}}(c *gin.Context) {
-	factory := func() interface{} {
-		return &{{operationId}}Request{}
-	}
-	handlers.{{operationId}}(c, factory)
+	api.handlers.{{operationId}}(c)
 }
 
 {{/operation}}
