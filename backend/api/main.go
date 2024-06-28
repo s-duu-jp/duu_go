@@ -2,11 +2,16 @@ package main
 
 import (
 	sw "api/controllers/restapi"
+	"api/handlers/impl"
 	"log"
 )
 
 func main() {
 	// RESTful API
-	router := sw.NewRouter(sw.ApiHandleFunctions{})
+	apiHandleFunctions := sw.ApiHandleFunctions{
+		AuthenticationAPI: sw.NewAuthenticationAPI(impl.NewAuthenticationHandlers()),
+		SampleAPI:         sw.NewSampleAPI(impl.NewSampleHandlers()),
+	}
+	router := sw.NewRouter(apiHandleFunctions)
 	log.Fatal(router.Run(":3000"))
 }

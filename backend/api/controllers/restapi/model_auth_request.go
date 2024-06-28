@@ -9,9 +9,9 @@
 
 package openapi
 
-type PostLoginRequest struct {
+type AuthRequest struct {
 
-	Uid string `json:"uid,omitempty"`
+	Uid string `json:"uid,omitempty" binding:"required"`
 
-	Password string `json:"password,omitempty"`
+	Password string `json:"password,omitempty" binding:"required"`
 }

@@ -80,6 +80,8 @@ type ApiHandleFunctions struct {
 
 	// Routes for the AuthenticationAPI part of the API
 	AuthenticationAPI AuthenticationAPI
+	// Routes for the SampleAPI part of the API
+	SampleAPI SampleAPI
 }
 
 func getRoutes(handleFunctions ApiHandleFunctions) []Route {
@@ -91,16 +93,10 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.AuthenticationAPI.PostLogin,
 		},
 		{
-			"PostLogout",
+			"PostSample",
 			http.MethodPost,
-			"/logout",
-			handleFunctions.AuthenticationAPI.PostLogout,
-		},
-		{
-			"PostRefreshToken",
-			http.MethodPost,
-			"/refresh-token",
-			handleFunctions.AuthenticationAPI.PostRefreshToken,
+			"/sample",
+			handleFunctions.SampleAPI.PostSample,
 		},
 	}
 }
