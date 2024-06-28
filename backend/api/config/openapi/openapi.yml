@@ -18,14 +18,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                uid:
-                  type: string
-                  example: admin
-                password:
-                  type: string
-                  example: pass
+              $ref: '#/components/schemas/AuthRequest'
       responses:
         '200':
           description: ログイン成功
@@ -51,109 +44,7 @@ paths:
                     type: string
                     example: Invalid credentials
         '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
-  /logout:
-    post:
-      tags:
-        - Authentication
-      summary: ログアウト
-      operationId: PostLogout
-      requestBody:
-        description: ログアウトリクエスト（特に必要なデータはなし）
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-      responses:
-        '200':
-          description: ログアウト成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Successfully logged out
-        '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid session
-        '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
-  /refresh-token:
-    post:
-      tags:
-        - Authentication
-      summary: トークン再発行
-      operationId: PostRefreshToken
-      requestBody:
-        description: トークン再発行に必要な情報
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                refresh_token:
-                  type: string
-                  example: jwt_refresh_token
-      responses:
-        '200':
-          description: トークン再発行成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  access_token:
-                    type: string
-                    example: jwt_access_token
-        '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid refresh token
-        '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
-
+          $ref: '#/components/responses/InternalServerError'
   /sample:
     post:
       tags:
@@ -166,14 +57,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                udi:
-                  type: string
-                  example: admin
-                password:
-                  type: string
-                  example: pass
+              $ref: '#/components/schemas/AuthRequest'
       responses:
         '200':
           description: リクエスト成功
@@ -185,3 +69,27 @@ paths:
                   status:
                     type: string
                     example: ok
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    AuthRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          x-go-custom-tag: binding:"required"
+        password:
+          type: string
+          x-go-custom-tag: binding:"required"
+  responses:
+    InternalServerError:
+      description: サーバーエラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unexpected error

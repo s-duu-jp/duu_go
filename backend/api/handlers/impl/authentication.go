@@ -10,7 +10,7 @@ import (
 
 // ログイン
 func (h *handlersImpl) PostLogin(c *gin.Context) {
-	req := &openapi.PostLoginRequest{}
+	req := &openapi.AuthRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return

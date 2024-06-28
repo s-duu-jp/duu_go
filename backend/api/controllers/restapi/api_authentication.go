@@ -29,15 +29,3 @@ func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
 	api.handlers.PostLogin(c)
 }
 
-// Post /logout
-// ログアウト 
-func (api *AuthenticationAPI) PostLogout(c *gin.Context) {
-	api.handlers.PostLogout(c)
-}
-
-// Post /refresh-token
-// トークン再発行 
-func (api *AuthenticationAPI) PostRefreshToken(c *gin.Context) {
-	api.handlers.PostRefreshToken(c)
-}
-

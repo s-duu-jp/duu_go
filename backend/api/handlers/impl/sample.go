@@ -9,7 +9,7 @@ import (
 )
 
 func (h *handlersImpl) PostSample(c *gin.Context) {
-	req := &openapi.PostSampleRequest{}
+	req := &openapi.AuthRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return

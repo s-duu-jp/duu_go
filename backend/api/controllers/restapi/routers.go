@@ -93,18 +93,6 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.AuthenticationAPI.PostLogin,
 		},
 		{
-			"PostLogout",
-			http.MethodPost,
-			"/logout",
-			handleFunctions.AuthenticationAPI.PostLogout,
-		},
-		{
-			"PostRefreshToken",
-			http.MethodPost,
-			"/refresh-token",
-			handleFunctions.AuthenticationAPI.PostRefreshToken,
-		},
-		{
 			"PostSample",
 			http.MethodPost,
 			"/sample",

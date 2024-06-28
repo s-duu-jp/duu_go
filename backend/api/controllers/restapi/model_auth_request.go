@@ -9,7 +9,9 @@
 
 package openapi
 
-type PostLogout200Response struct {
+type AuthRequest struct {
 
-	Message string `json:"message,omitempty"`
+	Uid string `json:"uid,omitempty" binding:"required"`
+
+	Password string `json:"password,omitempty" binding:"required"`
 }
