@@ -4,12 +4,22 @@ import (
 	"net/http"
 
 	openapi "api/controllers/restapi"
+	"api/handlers"
 
 	"github.com/gin-gonic/gin"
 )
 
+type authenticationHandlersImpl struct {
+}
+
+var _ handlers.AuthenticationHandlers = &authenticationHandlersImpl{}
+
+func NewAuthenticationHandlers() handlers.AuthenticationHandlers {
+	return &authenticationHandlersImpl{}
+}
+
 // ログイン
-func (h *handlersImpl) PostLogin(c *gin.Context) {
+func (h *authenticationHandlersImpl) PostLogin(c *gin.Context) {
 	req := &openapi.AuthRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
@@ -20,11 +30,11 @@ func (h *handlersImpl) PostLogin(c *gin.Context) {
 }
 
 // トークンの再発行
-func (h *handlersImpl) PostRefreshToken(c *gin.Context) {
+func (h *authenticationHandlersImpl) PostRefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
 // ログアウト
-func (h *handlersImpl) PostLogout(c *gin.Context) {
+func (h *authenticationHandlersImpl) PostLogout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

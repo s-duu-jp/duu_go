@@ -16,16 +16,15 @@ import (
 )
 
 type SampleAPI struct {
-	handlers handlers.Handlers
+	handlers handlers.SampleHandlers
 }
 
-func NewSampleAPI(handlers handlers.Handlers) SampleAPI {
+func NewSampleAPI(handlers handlers.SampleHandlers) SampleAPI {
 	return SampleAPI{handlers: handlers}
 }
 
 // Post /sample
-// サンプルPOSTリクエスト 
+// サンプルPOSTリクエスト
 func (api *SampleAPI) PostSample(c *gin.Context) {
 	api.handlers.PostSample(c)
 }
-

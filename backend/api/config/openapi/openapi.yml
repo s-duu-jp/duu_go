@@ -10,6 +10,7 @@ paths:
     post:
       tags:
         - Authentication
+      x-go-tag: Authentication
       summary: ログイン
       operationId: PostLogin
       requestBody:

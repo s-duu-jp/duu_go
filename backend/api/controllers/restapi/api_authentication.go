@@ -16,16 +16,15 @@ import (
 )
 
 type AuthenticationAPI struct {
-	handlers handlers.Handlers
+	handlers handlers.AuthenticationHandlers
 }
 
-func NewAuthenticationAPI(handlers handlers.Handlers) AuthenticationAPI {
+func NewAuthenticationAPI(handlers handlers.AuthenticationHandlers) AuthenticationAPI {
 	return AuthenticationAPI{handlers: handlers}
 }
 
 // Post /login
-// ログイン 
+// ログイン
 func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
 	api.handlers.PostLogin(c)
 }
-
