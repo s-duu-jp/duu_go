@@ -19,7 +19,7 @@ type AuthenticationAPI struct {
 }
 
 // Post /login
-// ログイン
+// ログイン 
 func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
 	factory := func() interface{} {
 		return &PostLoginRequest{}
@@ -28,7 +28,7 @@ func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
 }
 
 // Post /logout
-// ログアウト
+// ログアウト 
 func (api *AuthenticationAPI) PostLogout(c *gin.Context) {
 	factory := func() interface{} {
 		return &PostLogoutRequest{}
@@ -37,10 +37,11 @@ func (api *AuthenticationAPI) PostLogout(c *gin.Context) {
 }
 
 // Post /refresh-token
-// トークン再発行
+// トークン再発行 
 func (api *AuthenticationAPI) PostRefreshToken(c *gin.Context) {
 	factory := func() interface{} {
 		return &PostRefreshTokenRequest{}
 	}
 	handlers.PostRefreshToken(c, factory)
 }
+

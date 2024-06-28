@@ -49,4 +49,4 @@ volumes
 
 # backend api
 **/backend/api/tmp
-**/backend/api/controllers/.openapi-generator
+**/backend/api/.openapi-generator
