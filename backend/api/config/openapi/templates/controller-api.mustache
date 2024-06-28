@@ -18,7 +18,10 @@ type {{classname}} struct {
 // Deprecated
 {{/isDeprecated}}
 func (api *{{classname}}) {{nickname}}(c *gin.Context) {
-	handlers.{{operationId}}(c)
+	factory := func() interface{} {
+		return &{{operationId}}Request{}
+	}
+	handlers.{{operationId}}(c, factory)
 }
 
 {{/operation}}

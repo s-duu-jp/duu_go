@@ -8,6 +8,12 @@ import (
 
 // ログイン
 func PostLogin(c *gin.Context) {
+	req := factory()
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 

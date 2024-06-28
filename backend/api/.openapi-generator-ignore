@@ -1,5 +1,5 @@
 api/openapi.yaml
-go/README.md
+controllers/restapi/README.md
 main.go
 Dockerfile
 go.mod
