@@ -8,10 +8,10 @@ import (
 
 func main() {
 	// RESTful API
+	hs := impl.NewHandlers()
 	apiHandleFunctions := sw.ApiHandleFunctions{
-		AuthenticationAPI: sw.NewAuthenticationAPI(
-			impl.NewAuthenticationHandlers(),
-		),
+		AuthenticationAPI: sw.NewAuthenticationAPI(hs),
+		SampleAPI:         sw.NewSampleAPI(hs),
 	}
 	router := sw.NewRouter(apiHandleFunctions)
 	log.Fatal(router.Run(":3000"))
