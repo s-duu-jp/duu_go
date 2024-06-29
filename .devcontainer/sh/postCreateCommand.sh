@@ -18,7 +18,7 @@ do
 
   echo "Migration failed, retrying in 1 second... ($attempt/$max_retries)"
   attempt=$((attempt + 1))
-  sleep 1
+  sleep 3
 done
 
 echo "Migration succeeded."
