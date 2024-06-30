@@ -9,9 +9,8 @@ import (
 	"api/graph/model"
 	"context"
 	"fmt"
+	"log"
 	"strconv"
-
-	"entgo.io/contrib/entgql"
 )
 
 // Node is the resolver for the node field.
@@ -24,74 +23,63 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
+// Organizations is the resolver for the organizations field.
+func (r *queryResolver) Organizations(ctx context.Context) ([]*model.Organization, error) {
+	panic(fmt.Errorf("not implemented: Organizations - organizations"))
+}
+
+// Photos is the resolver for the photos field.
+func (r *queryResolver) Photos(ctx context.Context) ([]*model.Photo, error) {
+	panic(fmt.Errorf("not implemented: Photos - photos"))
+}
+
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
-	afterCursor := entgql.Cursor[int]{}
-	if after != nil {
-		afterID, err := strconv.Atoi(*after)
-		if err != nil {
-			return nil, err
-		}
-		afterCursor = entgql.Cursor[int]{ID: afterID}
-	}
-	beforeCursor := entgql.Cursor[int]{}
-	if before != nil {
-		beforeID, err := strconv.Atoi(*before)
-		if err != nil {
-			return nil, err
-		}
-		beforeCursor = entgql.Cursor[int]{ID: beforeID}
-	}
-
-	userConn, err := r.client.User.Query().Paginate(ctx, &afterCursor, first, &beforeCursor, last, toUserPaginateOptions(where)...)
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	entUsers, err := r.client.User.
+		Query().
+		WithPhotos().       // Photosリレーションをロード
+		WithOrganization(). // Organizationリレーションをロード
+		All(ctx)
 	if err != nil {
-		return nil, err
+		log.Fatalf("failed querying Users: %v", err)
 	}
+	modelUsers := make([]*model.User, len(entUsers))
+	for i, entUser := range entUsers {
+		modelUser := &model.User{
+			ID:    strconv.Itoa(entUser.ID),
+			Name:  entUser.Name,
+			Email: entUser.Email,
+			Sid:   entUser.Sid,
+			// 他のフィールドのマッピング
+		}
 
-	return toModelUserConnection(userConn), nil
+		// Photosのマッピング
+		if entUser.Edges.Photos != nil {
+			modelPhotos := make([]*model.Photo, len(entUser.Edges.Photos))
+			for j, entPhoto := range entUser.Edges.Photos {
+				modelPhotos[j] = &model.Photo{
+					ID:   strconv.Itoa(entPhoto.ID),
+					Name: entPhoto.Name,
+					URL:  entPhoto.URL,
+				}
+			}
+			modelUser.Photos = modelPhotos
+		}
+
+		// Organizationのマッピング
+		if entUser.Edges.Organization != nil {
+			modelUser.Organization = &model.Organization{
+				ID:   strconv.Itoa(entUser.Edges.Organization.ID),
+				Name: entUser.Edges.Organization.Name,
+			}
+		}
+
+		modelUsers[i] = modelUser
+	}
+	return modelUsers, nil
 }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func toUserPaginateOptions(where *model.UserWhereInput) []ent.UserPaginateOption {
-	var opts []ent.UserPaginateOption
-	if where != nil {
-	}
-	return opts
-}
-func toModelUserConnection(userConn *ent.UserConnection) *model.UserConnection {
-	var edges []*model.UserEdge
-	for _, edge := range userConn.Edges {
-		edges = append(edges, &model.UserEdge{
-			Node: &model.User{
-				ID:   strconv.Itoa(edge.Node.ID),
-				Name: edge.Node.Name,
-				// 他のフィールドも必要に応じてマッピング
-			},
-			Cursor: strconv.Itoa(edge.Cursor.ID),
-		})
-	}
-
-	startCursor := strconv.Itoa(userConn.PageInfo.StartCursor.ID)
-	endCursor := strconv.Itoa(userConn.PageInfo.EndCursor.ID)
-
-	return &model.UserConnection{
-		Edges: edges,
-		PageInfo: &model.PageInfo{
-			HasNextPage:     userConn.PageInfo.HasNextPage,
-			HasPreviousPage: userConn.PageInfo.HasPreviousPage,
-			StartCursor:     &startCursor,
-			EndCursor:       &endCursor,
-		},
-		TotalCount: userConn.TotalCount,
-	}
-}

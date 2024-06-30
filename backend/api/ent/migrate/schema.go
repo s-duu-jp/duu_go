@@ -8,6 +8,38 @@ import (
 )
 
 var (
+	// OrganizationsColumns holds the columns for the "organizations" table.
+	OrganizationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+	}
+	// OrganizationsTable holds the schema information for the "organizations" table.
+	OrganizationsTable = &schema.Table{
+		Name:       "organizations",
+		Columns:    OrganizationsColumns,
+		PrimaryKey: []*schema.Column{OrganizationsColumns[0]},
+	}
+	// PhotosColumns holds the columns for the "photos" table.
+	PhotosColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "url", Type: field.TypeString},
+		{Name: "user_photos", Type: field.TypeInt, Nullable: true},
+	}
+	// PhotosTable holds the schema information for the "photos" table.
+	PhotosTable = &schema.Table{
+		Name:       "photos",
+		Columns:    PhotosColumns,
+		PrimaryKey: []*schema.Column{PhotosColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "photos_users_photos",
+				Columns:    []*schema.Column{PhotosColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -20,18 +52,31 @@ var (
 		{Name: "status_type", Type: field.TypeString},
 		{Name: "oauth_type", Type: field.TypeString},
 		{Name: "sub", Type: field.TypeString, Nullable: true},
+		{Name: "organization_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_organizations_users",
+				Columns:    []*schema.Column{UsersColumns[10]},
+				RefColumns: []*schema.Column{OrganizationsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		OrganizationsTable,
+		PhotosTable,
 		UsersTable,
 	}
 )
 
 func init() {
+	PhotosTable.ForeignKeys[0].RefTable = UsersTable
+	UsersTable.ForeignKeys[0].RefTable = OrganizationsTable
 }

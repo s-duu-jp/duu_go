@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"api/ent/organization"
+	"api/ent/photo"
 	"api/ent/predicate"
 	"api/ent/user"
 	"context"
@@ -165,9 +167,70 @@ func (uu *UserUpdate) ClearSub() *UserUpdate {
 	return uu
 }
 
+// AddPhotoIDs adds the "photos" edge to the Photo entity by IDs.
+func (uu *UserUpdate) AddPhotoIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddPhotoIDs(ids...)
+	return uu
+}
+
+// AddPhotos adds the "photos" edges to the Photo entity.
+func (uu *UserUpdate) AddPhotos(p ...*Photo) *UserUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uu.AddPhotoIDs(ids...)
+}
+
+// SetOrganizationID sets the "organization" edge to the Organization entity by ID.
+func (uu *UserUpdate) SetOrganizationID(id int) *UserUpdate {
+	uu.mutation.SetOrganizationID(id)
+	return uu
+}
+
+// SetNillableOrganizationID sets the "organization" edge to the Organization entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableOrganizationID(id *int) *UserUpdate {
+	if id != nil {
+		uu = uu.SetOrganizationID(*id)
+	}
+	return uu
+}
+
+// SetOrganization sets the "organization" edge to the Organization entity.
+func (uu *UserUpdate) SetOrganization(o *Organization) *UserUpdate {
+	return uu.SetOrganizationID(o.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearPhotos clears all "photos" edges to the Photo entity.
+func (uu *UserUpdate) ClearPhotos() *UserUpdate {
+	uu.mutation.ClearPhotos()
+	return uu
+}
+
+// RemovePhotoIDs removes the "photos" edge to Photo entities by IDs.
+func (uu *UserUpdate) RemovePhotoIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemovePhotoIDs(ids...)
+	return uu
+}
+
+// RemovePhotos removes "photos" edges to Photo entities.
+func (uu *UserUpdate) RemovePhotos(p ...*Photo) *UserUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uu.RemovePhotoIDs(ids...)
+}
+
+// ClearOrganization clears the "organization" edge to the Organization entity.
+func (uu *UserUpdate) ClearOrganization() *UserUpdate {
+	uu.mutation.ClearOrganization()
+	return uu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -238,6 +301,80 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if uu.mutation.SubCleared() {
 		_spec.ClearField(user.FieldSub, field.TypeString)
+	}
+	if uu.mutation.PhotosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedPhotosIDs(); len(nodes) > 0 && !uu.mutation.PhotosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.PhotosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.OrganizationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.OrganizationTable,
+			Columns: []string{user.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.OrganizationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.OrganizationTable,
+			Columns: []string{user.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -397,9 +534,70 @@ func (uuo *UserUpdateOne) ClearSub() *UserUpdateOne {
 	return uuo
 }
 
+// AddPhotoIDs adds the "photos" edge to the Photo entity by IDs.
+func (uuo *UserUpdateOne) AddPhotoIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddPhotoIDs(ids...)
+	return uuo
+}
+
+// AddPhotos adds the "photos" edges to the Photo entity.
+func (uuo *UserUpdateOne) AddPhotos(p ...*Photo) *UserUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uuo.AddPhotoIDs(ids...)
+}
+
+// SetOrganizationID sets the "organization" edge to the Organization entity by ID.
+func (uuo *UserUpdateOne) SetOrganizationID(id int) *UserUpdateOne {
+	uuo.mutation.SetOrganizationID(id)
+	return uuo
+}
+
+// SetNillableOrganizationID sets the "organization" edge to the Organization entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableOrganizationID(id *int) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetOrganizationID(*id)
+	}
+	return uuo
+}
+
+// SetOrganization sets the "organization" edge to the Organization entity.
+func (uuo *UserUpdateOne) SetOrganization(o *Organization) *UserUpdateOne {
+	return uuo.SetOrganizationID(o.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearPhotos clears all "photos" edges to the Photo entity.
+func (uuo *UserUpdateOne) ClearPhotos() *UserUpdateOne {
+	uuo.mutation.ClearPhotos()
+	return uuo
+}
+
+// RemovePhotoIDs removes the "photos" edge to Photo entities by IDs.
+func (uuo *UserUpdateOne) RemovePhotoIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemovePhotoIDs(ids...)
+	return uuo
+}
+
+// RemovePhotos removes "photos" edges to Photo entities.
+func (uuo *UserUpdateOne) RemovePhotos(p ...*Photo) *UserUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uuo.RemovePhotoIDs(ids...)
+}
+
+// ClearOrganization clears the "organization" edge to the Organization entity.
+func (uuo *UserUpdateOne) ClearOrganization() *UserUpdateOne {
+	uuo.mutation.ClearOrganization()
+	return uuo
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -500,6 +698,80 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if uuo.mutation.SubCleared() {
 		_spec.ClearField(user.FieldSub, field.TypeString)
+	}
+	if uuo.mutation.PhotosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedPhotosIDs(); len(nodes) > 0 && !uuo.mutation.PhotosCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.PhotosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.OrganizationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.OrganizationTable,
+			Columns: []string{user.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.OrganizationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.OrganizationTable,
+			Columns: []string{user.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

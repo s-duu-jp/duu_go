@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"api/ent/organization"
 	"api/ent/user"
 	"fmt"
 	"strings"
@@ -33,8 +34,47 @@ type User struct {
 	// OauthType holds the value of the "oauth_type" field.
 	OauthType string `json:"oauth_type,omitempty"`
 	// Sub holds the value of the "sub" field.
-	Sub          string `json:"sub,omitempty"`
-	selectValues sql.SelectValues
+	Sub string `json:"sub,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges              UserEdges `json:"edges"`
+	organization_users *int
+	selectValues       sql.SelectValues
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Photos holds the value of the photos edge.
+	Photos []*Photo `json:"photos,omitempty"`
+	// Organization holds the value of the organization edge.
+	Organization *Organization `json:"organization,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+	// totalCount holds the count of the edges above.
+	totalCount [2]map[string]int
+
+	namedPhotos map[string][]*Photo
+}
+
+// PhotosOrErr returns the Photos value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PhotosOrErr() ([]*Photo, error) {
+	if e.loadedTypes[0] {
+		return e.Photos, nil
+	}
+	return nil, &NotLoadedError{edge: "photos"}
+}
+
+// OrganizationOrErr returns the Organization value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) OrganizationOrErr() (*Organization, error) {
+	if e.Organization != nil {
+		return e.Organization, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: organization.Label}
+	}
+	return nil, &NotLoadedError{edge: "organization"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -46,6 +86,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldSid, user.FieldUID, user.FieldName, user.FieldEmail, user.FieldPassword, user.FieldRoleType, user.FieldStatusType, user.FieldOauthType, user.FieldSub:
 			values[i] = new(sql.NullString)
+		case user.ForeignKeys[0]: // organization_users
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -121,6 +163,13 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Sub = value.String
 			}
+		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field organization_users", value)
+			} else if value.Valid {
+				u.organization_users = new(int)
+				*u.organization_users = int(value.Int64)
+			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -132,6 +181,16 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
+}
+
+// QueryPhotos queries the "photos" edge of the User entity.
+func (u *User) QueryPhotos() *PhotoQuery {
+	return NewUserClient(u.config).QueryPhotos(u)
+}
+
+// QueryOrganization queries the "organization" edge of the User entity.
+func (u *User) QueryOrganization() *OrganizationQuery {
+	return NewUserClient(u.config).QueryOrganization(u)
 }
 
 // Update returns a builder for updating this User.
@@ -184,6 +243,30 @@ func (u *User) String() string {
 	builder.WriteString(u.Sub)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedPhotos returns the Photos named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedPhotos(name string) ([]*Photo, error) {
+	if u.Edges.namedPhotos == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedPhotos[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedPhotos(name string, edges ...*Photo) {
+	if u.Edges.namedPhotos == nil {
+		u.Edges.namedPhotos = make(map[string][]*Photo)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedPhotos[name] = []*Photo{}
+	} else {
+		u.Edges.namedPhotos[name] = append(u.Edges.namedPhotos[name], edges...)
+	}
 }
 
 // Users is a parsable slice of User.

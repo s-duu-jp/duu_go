@@ -41,7 +41,18 @@ func createSeedData(client *ent.Client) {
 
 	// ユーザーが存在しない場合にのみ作成
 	if !exists {
-		u := client.User.Create().
+		// A組織を作成
+		orgA := client.Organization.Create().
+			SetName("A組織").
+			SaveX(ctx)
+
+		// B組織を作成
+		orgB := client.Organization.Create().
+			SetName("B組織").
+			SaveX(ctx)
+
+		// Adminユーザーを作成し、A組織に割り当て
+		admin := client.User.Create().
 			SetUID("admin").
 			SetName("管理者").
 			SetEmail("admin@hoge.jp").
@@ -49,15 +60,29 @@ func createSeedData(client *ent.Client) {
 			SetRoleType("admin").
 			SetStatusType("active").
 			SetOauthType("local").
+			SetOrganization(orgA).
+			SaveX(ctx)
+
+		// プロファイル1を作成し、Adminに割り当て
+		profile1 := client.Photo.Create().
+			SetName("profile1").
+			SetURL("http://example.com/profile1.jpg").
+			SetUser(admin).
+			SaveX(ctx)
+
+		// プロファイル2を作成（割り当てなし）
+		profile2 := client.Photo.Create().
+			SetName("profile2").
+			SetURL("http://example.com/profile2.jpg").
 			SaveX(ctx)
 
 		// エラーハンドリング
-		if u == nil {
-			log.Fatalf("failed creating user: %v", u)
+		if admin == nil || profile1 == nil || profile2 == nil || orgA == nil || orgB == nil {
+			log.Fatalf("failed creating seed data")
 		}
 
-		log.Println("user created:", u)
+		log.Println("Admin user created with profile1 and assigned to A組織")
 	} else {
-		log.Println("user already exists")
+		log.Println("Admin user already exists")
 	}
 }

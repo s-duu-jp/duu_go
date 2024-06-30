@@ -3,11 +3,176 @@
 package ent
 
 import (
+	"api/ent/organization"
+	"api/ent/photo"
 	"api/ent/user"
 	"context"
 
 	"github.com/99designs/gqlgen/graphql"
 )
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (o *OrganizationQuery) CollectFields(ctx context.Context, satisfies ...string) (*OrganizationQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return o, nil
+	}
+	if err := o.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+func (o *OrganizationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(organization.Columns))
+		selectedFields = []string{organization.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "users":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: o.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			o.WithNamedUsers(alias, func(wq *UserQuery) {
+				*wq = *query
+			})
+		case "name":
+			if _, ok := fieldSeen[organization.FieldName]; !ok {
+				selectedFields = append(selectedFields, organization.FieldName)
+				fieldSeen[organization.FieldName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		o.Select(selectedFields...)
+	}
+	return nil
+}
+
+type organizationPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []OrganizationPaginateOption
+}
+
+func newOrganizationPaginateArgs(rv map[string]any) *organizationPaginateArgs {
+	args := &organizationPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*OrganizationWhereInput); ok {
+		args.opts = append(args.opts, WithOrganizationFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (ph *PhotoQuery) CollectFields(ctx context.Context, satisfies ...string) (*PhotoQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return ph, nil
+	}
+	if err := ph.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return ph, nil
+}
+
+func (ph *PhotoQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(photo.Columns))
+		selectedFields = []string{photo.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "user":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: ph.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			ph.withUser = query
+		case "name":
+			if _, ok := fieldSeen[photo.FieldName]; !ok {
+				selectedFields = append(selectedFields, photo.FieldName)
+				fieldSeen[photo.FieldName] = struct{}{}
+			}
+		case "url":
+			if _, ok := fieldSeen[photo.FieldURL]; !ok {
+				selectedFields = append(selectedFields, photo.FieldURL)
+				fieldSeen[photo.FieldURL] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		ph.Select(selectedFields...)
+	}
+	return nil
+}
+
+type photoPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []PhotoPaginateOption
+}
+
+func newPhotoPaginateArgs(rv map[string]any) *photoPaginateArgs {
+	args := &photoPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*PhotoWhereInput); ok {
+		args.opts = append(args.opts, WithPhotoFilter(v.Filter))
+	}
+	return args
+}
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (u *UserQuery) CollectFields(ctx context.Context, satisfies ...string) (*UserQuery, error) {
@@ -30,6 +195,30 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "photos":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PhotoClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, photoImplementors)...); err != nil {
+				return err
+			}
+			u.WithNamedPhotos(alias, func(wq *PhotoQuery) {
+				*wq = *query
+			})
+
+		case "organization":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&OrganizationClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, organizationImplementors)...); err != nil {
+				return err
+			}
+			u.withOrganization = query
 		case "sid":
 			if _, ok := fieldSeen[user.FieldSid]; !ok {
 				selectedFields = append(selectedFields, user.FieldSid)

@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"api/ent/organization"
+	"api/ent/photo"
 	"api/ent/user"
 	"context"
 	"fmt"
@@ -22,6 +24,16 @@ import (
 type Noder interface {
 	IsNode()
 }
+
+var organizationImplementors = []string{"Organization", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Organization) IsNode() {}
+
+var photoImplementors = []string{"Photo", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Photo) IsNode() {}
 
 var userImplementors = []string{"User", "Node"}
 
@@ -86,6 +98,24 @@ func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder
 
 func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error) {
 	switch table {
+	case organization.Table:
+		query := c.Organization.Query().
+			Where(organization.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, organizationImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case photo.Table:
+		query := c.Photo.Query().
+			Where(photo.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, photoImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case user.Table:
 		query := c.User.Query().
 			Where(user.ID(id))
@@ -168,6 +198,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case organization.Table:
+		query := c.Organization.Query().
+			Where(organization.IDIn(ids...))
+		query, err := query.CollectFields(ctx, organizationImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case photo.Table:
+		query := c.Photo.Query().
+			Where(photo.IDIn(ids...))
+		query, err := query.CollectFields(ctx, photoImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case user.Table:
 		query := c.User.Query().
 			Where(user.IDIn(ids...))

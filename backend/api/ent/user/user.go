@@ -4,6 +4,7 @@ package user
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -29,8 +30,26 @@ const (
 	FieldOauthType = "oauth_type"
 	// FieldSub holds the string denoting the sub field in the database.
 	FieldSub = "sub"
+	// EdgePhotos holds the string denoting the photos edge name in mutations.
+	EdgePhotos = "photos"
+	// EdgeOrganization holds the string denoting the organization edge name in mutations.
+	EdgeOrganization = "organization"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// PhotosTable is the table that holds the photos relation/edge.
+	PhotosTable = "photos"
+	// PhotosInverseTable is the table name for the Photo entity.
+	// It exists in this package in order to avoid circular dependency with the "photo" package.
+	PhotosInverseTable = "photos"
+	// PhotosColumn is the table column denoting the photos relation/edge.
+	PhotosColumn = "user_photos"
+	// OrganizationTable is the table that holds the organization relation/edge.
+	OrganizationTable = "users"
+	// OrganizationInverseTable is the table name for the Organization entity.
+	// It exists in this package in order to avoid circular dependency with the "organization" package.
+	OrganizationInverseTable = "organizations"
+	// OrganizationColumn is the table column denoting the organization relation/edge.
+	OrganizationColumn = "organization_users"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -47,10 +66,21 @@ var Columns = []string{
 	FieldSub,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "users"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"organization_users",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -113,4 +143,39 @@ func ByOauthType(opts ...sql.OrderTermOption) OrderOption {
 // BySub orders the results by the sub field.
 func BySub(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSub, opts...).ToFunc()
+}
+
+// ByPhotosCount orders the results by photos count.
+func ByPhotosCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPhotosStep(), opts...)
+	}
+}
+
+// ByPhotos orders the results by photos terms.
+func ByPhotos(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPhotosStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOrganizationField orders the results by organization field.
+func ByOrganizationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrganizationStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newPhotosStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PhotosInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PhotosTable, PhotosColumn),
+	)
+}
+func newOrganizationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrganizationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, OrganizationTable, OrganizationColumn),
+	)
 }

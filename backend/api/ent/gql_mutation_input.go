@@ -2,17 +2,133 @@
 
 package ent
 
+// CreateOrganizationInput represents a mutation input for creating organizations.
+type CreateOrganizationInput struct {
+	Name    string
+	UserIDs []int
+}
+
+// Mutate applies the CreateOrganizationInput on the OrganizationMutation builder.
+func (i *CreateOrganizationInput) Mutate(m *OrganizationMutation) {
+	m.SetName(i.Name)
+	if v := i.UserIDs; len(v) > 0 {
+		m.AddUserIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateOrganizationInput on the OrganizationCreate builder.
+func (c *OrganizationCreate) SetInput(i CreateOrganizationInput) *OrganizationCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateOrganizationInput represents a mutation input for updating organizations.
+type UpdateOrganizationInput struct {
+	Name          *string
+	ClearUsers    bool
+	AddUserIDs    []int
+	RemoveUserIDs []int
+}
+
+// Mutate applies the UpdateOrganizationInput on the OrganizationMutation builder.
+func (i *UpdateOrganizationInput) Mutate(m *OrganizationMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearUsers {
+		m.ClearUsers()
+	}
+	if v := i.AddUserIDs; len(v) > 0 {
+		m.AddUserIDs(v...)
+	}
+	if v := i.RemoveUserIDs; len(v) > 0 {
+		m.RemoveUserIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateOrganizationInput on the OrganizationUpdate builder.
+func (c *OrganizationUpdate) SetInput(i UpdateOrganizationInput) *OrganizationUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateOrganizationInput on the OrganizationUpdateOne builder.
+func (c *OrganizationUpdateOne) SetInput(i UpdateOrganizationInput) *OrganizationUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreatePhotoInput represents a mutation input for creating photos.
+type CreatePhotoInput struct {
+	Name   string
+	URL    string
+	UserID *int
+}
+
+// Mutate applies the CreatePhotoInput on the PhotoMutation builder.
+func (i *CreatePhotoInput) Mutate(m *PhotoMutation) {
+	m.SetName(i.Name)
+	m.SetURL(i.URL)
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreatePhotoInput on the PhotoCreate builder.
+func (c *PhotoCreate) SetInput(i CreatePhotoInput) *PhotoCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdatePhotoInput represents a mutation input for updating photos.
+type UpdatePhotoInput struct {
+	Name      *string
+	URL       *string
+	ClearUser bool
+	UserID    *int
+}
+
+// Mutate applies the UpdatePhotoInput on the PhotoMutation builder.
+func (i *UpdatePhotoInput) Mutate(m *PhotoMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.URL; v != nil {
+		m.SetURL(*v)
+	}
+	if i.ClearUser {
+		m.ClearUser()
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdatePhotoInput on the PhotoUpdate builder.
+func (c *PhotoUpdate) SetInput(i UpdatePhotoInput) *PhotoUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdatePhotoInput on the PhotoUpdateOne builder.
+func (c *PhotoUpdateOne) SetInput(i UpdatePhotoInput) *PhotoUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
-	Sid        *string
-	UID        string
-	Name       string
-	Email      string
-	Password   *string
-	RoleType   string
-	StatusType string
-	OauthType  string
-	Sub        *string
+	Sid            *string
+	UID            string
+	Name           string
+	Email          string
+	Password       *string
+	RoleType       string
+	StatusType     string
+	OauthType      string
+	Sub            *string
+	PhotoIDs       []int
+	OrganizationID *int
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
@@ -32,6 +148,12 @@ func (i *CreateUserInput) Mutate(m *UserMutation) {
 	if v := i.Sub; v != nil {
 		m.SetSub(*v)
 	}
+	if v := i.PhotoIDs; len(v) > 0 {
+		m.AddPhotoIDs(v...)
+	}
+	if v := i.OrganizationID; v != nil {
+		m.SetOrganizationID(*v)
+	}
 }
 
 // SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
@@ -42,17 +164,22 @@ func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Sid           *string
-	UID           *string
-	Name          *string
-	Email         *string
-	ClearPassword bool
-	Password      *string
-	RoleType      *string
-	StatusType    *string
-	OauthType     *string
-	ClearSub      bool
-	Sub           *string
+	Sid               *string
+	UID               *string
+	Name              *string
+	Email             *string
+	ClearPassword     bool
+	Password          *string
+	RoleType          *string
+	StatusType        *string
+	OauthType         *string
+	ClearSub          bool
+	Sub               *string
+	ClearPhotos       bool
+	AddPhotoIDs       []int
+	RemovePhotoIDs    []int
+	ClearOrganization bool
+	OrganizationID    *int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -89,6 +216,21 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.Sub; v != nil {
 		m.SetSub(*v)
+	}
+	if i.ClearPhotos {
+		m.ClearPhotos()
+	}
+	if v := i.AddPhotoIDs; len(v) > 0 {
+		m.AddPhotoIDs(v...)
+	}
+	if v := i.RemovePhotoIDs; len(v) > 0 {
+		m.RemovePhotoIDs(v...)
+	}
+	if i.ClearOrganization {
+		m.ClearOrganization()
+	}
+	if v := i.OrganizationID; v != nil {
+		m.SetOrganizationID(*v)
 	}
 }
 

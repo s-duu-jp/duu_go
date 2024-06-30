@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"api/ent/organization"
+	"api/ent/photo"
 	"api/ent/user"
 	"context"
 	"errors"
@@ -95,6 +97,40 @@ func (uc *UserCreate) SetNillableSub(s *string) *UserCreate {
 		uc.SetSub(*s)
 	}
 	return uc
+}
+
+// AddPhotoIDs adds the "photos" edge to the Photo entity by IDs.
+func (uc *UserCreate) AddPhotoIDs(ids ...int) *UserCreate {
+	uc.mutation.AddPhotoIDs(ids...)
+	return uc
+}
+
+// AddPhotos adds the "photos" edges to the Photo entity.
+func (uc *UserCreate) AddPhotos(p ...*Photo) *UserCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uc.AddPhotoIDs(ids...)
+}
+
+// SetOrganizationID sets the "organization" edge to the Organization entity by ID.
+func (uc *UserCreate) SetOrganizationID(id int) *UserCreate {
+	uc.mutation.SetOrganizationID(id)
+	return uc
+}
+
+// SetNillableOrganizationID sets the "organization" edge to the Organization entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableOrganizationID(id *int) *UserCreate {
+	if id != nil {
+		uc = uc.SetOrganizationID(*id)
+	}
+	return uc
+}
+
+// SetOrganization sets the "organization" edge to the Organization entity.
+func (uc *UserCreate) SetOrganization(o *Organization) *UserCreate {
+	return uc.SetOrganizationID(o.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -222,6 +258,39 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Sub(); ok {
 		_spec.SetField(user.FieldSub, field.TypeString, value)
 		_node.Sub = value
+	}
+	if nodes := uc.mutation.PhotosIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PhotosTable,
+			Columns: []string{user.PhotosColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(photo.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.OrganizationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.OrganizationTable,
+			Columns: []string{user.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.organization_users = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
