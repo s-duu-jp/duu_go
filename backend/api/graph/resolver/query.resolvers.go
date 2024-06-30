@@ -6,6 +6,7 @@ package graph
 
 import (
 	"api/ent"
+	"api/graph"
 	"api/graph/model"
 	"context"
 	"fmt"
@@ -24,10 +25,9 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
 	panic(fmt.Errorf("not implemented: Users - users"))
-	// return r.Client.User.Query().Paginate(ctx, after, first, before, last, where)
 }
 
-// Query returns QueryResolver implementation.
-func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
+// Query returns graph.QueryResolver implementation.
+func (r *Resolver) Query() graph.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }

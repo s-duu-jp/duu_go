@@ -398,7 +398,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema/ent.graphqls" "schema/users.graphqls"
+//go:embed "schema/mutation.graphqls" "schema/query.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -410,8 +410,8 @@ func sourceData(filename string) string {
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/ent.graphqls", Input: sourceData("schema/ent.graphqls"), BuiltIn: false},
-	{Name: "schema/users.graphqls", Input: sourceData("schema/users.graphqls"), BuiltIn: false},
+	{Name: "schema/mutation.graphqls", Input: sourceData("schema/mutation.graphqls"), BuiltIn: false},
+	{Name: "schema/query.graphqls", Input: sourceData("schema/query.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
