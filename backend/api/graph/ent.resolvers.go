@@ -9,6 +9,9 @@ import (
 	"api/graph/model"
 	"context"
 	"fmt"
+	"log"
+	"reflect"
+	"strconv"
 )
 
 // Node is the resolver for the node field.
@@ -23,7 +26,50 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+	entUsers, err := r.client.User.Query().All(ctx)
+	if err != nil {
+		log.Fatalf("failed querying Users: %v", err)
+	}
+	modelUsers := make([]*model.User, len(entUsers))
+	for i, entUser := range entUsers {
+		modelUser := &model.User{}
+		entUserValue := reflect.ValueOf(entUser).Elem()
+		modelUserValue := reflect.ValueOf(modelUser).Elem()
+		modelUserType := modelUserValue.Type()
+
+		for j := 0; j < modelUserType.NumField(); j++ {
+			field := modelUserType.Field(j)
+			fieldValue := entUserValue.FieldByName(field.Name)
+
+			if fieldValue.IsValid() {
+				modelField := modelUserValue.FieldByName(field.Name)
+				if modelField.CanSet() {
+					switch modelField.Kind() {
+					case reflect.String:
+						if fieldValue.Kind() == reflect.Int {
+							modelField.SetString(strconv.Itoa(int(fieldValue.Int())))
+						} else {
+							modelField.SetString(fieldValue.String())
+						}
+					case reflect.Ptr:
+						if modelField.Type().Elem().Kind() == reflect.String {
+							if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+								val := fieldValue.Elem().String()
+								modelField.Set(reflect.ValueOf(&val))
+							} else if fieldValue.Kind() == reflect.String {
+								val := fieldValue.String()
+								modelField.Set(reflect.ValueOf(&val))
+							}
+						}
+					}
+				}
+			} else if field.Name == "ID" {
+				modelUserValue.FieldByName("ID").SetString(strconv.Itoa(entUser.ID))
+			}
+		}
+		modelUsers[i] = modelUser
+	}
+	return modelUsers, nil
 }
 
 // Query returns QueryResolver implementation.
