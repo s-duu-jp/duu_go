@@ -39,7 +39,7 @@ func (User) Edges() []ent.Edge {
 // Userのアノテーション
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.RelayConnection(),
 		entgql.QueryField(),
+		entgql.Mutations(entgql.MutationCreate(), entgql.MutationUpdate()),
 	}
 }

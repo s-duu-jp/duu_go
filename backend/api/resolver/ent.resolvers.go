@@ -1,4 +1,4 @@
-package graph
+package resolver
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -6,9 +6,11 @@ package graph
 
 import (
 	"api/ent"
-	"api/graph/model"
+	"api/resolver/model"
 	"context"
 	"fmt"
+	"log"
+	"strconv"
 )
 
 // Node is the resolver for the node field.
@@ -23,7 +25,19 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+	entUsers, err := r.client.User.Query().All(ctx)
+	if err != nil {
+		log.Fatalf("failed querying Users: %v", err)
+	}
+	modelUsers := make([]*model.User, len(entUsers))
+	for i, entUser := range entUsers {
+		modelUsers[i] = &model.User{
+			ID:    strconv.Itoa(entUser.ID),
+			Name:  entUser.Name,
+			Email: entUser.Email,
+		}
+	}
+	return modelUsers, nil
 }
 
 // Query returns QueryResolver implementation.
