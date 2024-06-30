@@ -9,8 +9,6 @@ import (
 	"api/graph/model"
 	"context"
 	"fmt"
-	"log"
-	"strconv"
 )
 
 // Node is the resolver for the node field.
@@ -24,59 +22,21 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 }
 
 // Organizations is the resolver for the organizations field.
-func (r *queryResolver) Organizations(ctx context.Context) ([]*model.Organization, error) {
-	panic(fmt.Errorf("not implemented: Organizations - organizations"))
+func (r *queryResolver) Organizations(ctx context.Context, after *string, first *int, before *string, last *int, where *model.OrganizationWhereInput) (*model.OrganizationConnection, error) {
+	//panic(fmt.Errorf("not implemented: Organizations - organizations"))
+	return r.client.Organizations.Query().Paginate(ctx, after, first, before, last, where)
 }
 
 // Photos is the resolver for the photos field.
-func (r *queryResolver) Photos(ctx context.Context) ([]*model.Photo, error) {
-	panic(fmt.Errorf("not implemented: Photos - photos"))
+func (r *queryResolver) Photos(ctx context.Context, after *string, first *int, before *string, last *int, where *model.PhotoWhereInput) (*model.PhotoConnection, error) {
+	//panic(fmt.Errorf("not implemented: Photos - photos"))
+	return r.client.Photos.Query().Paginate(ctx, after, first, before, last, where)
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	entUsers, err := r.client.User.
-		Query().
-		WithPhotos().       // Photosリレーションをロード
-		WithOrganization(). // Organizationリレーションをロード
-		All(ctx)
-	if err != nil {
-		log.Fatalf("failed querying Users: %v", err)
-	}
-	modelUsers := make([]*model.User, len(entUsers))
-	for i, entUser := range entUsers {
-		modelUser := &model.User{
-			ID:    strconv.Itoa(entUser.ID),
-			Name:  entUser.Name,
-			Email: entUser.Email,
-			Sid:   entUser.Sid,
-			// 他のフィールドのマッピング
-		}
-
-		// Photosのマッピング
-		if entUser.Edges.Photos != nil {
-			modelPhotos := make([]*model.Photo, len(entUser.Edges.Photos))
-			for j, entPhoto := range entUser.Edges.Photos {
-				modelPhotos[j] = &model.Photo{
-					ID:   strconv.Itoa(entPhoto.ID),
-					Name: entPhoto.Name,
-					URL:  entPhoto.URL,
-				}
-			}
-			modelUser.Photos = modelPhotos
-		}
-
-		// Organizationのマッピング
-		if entUser.Edges.Organization != nil {
-			modelUser.Organization = &model.Organization{
-				ID:   strconv.Itoa(entUser.Edges.Organization.ID),
-				Name: entUser.Edges.Organization.Name,
-			}
-		}
-
-		modelUsers[i] = modelUser
-	}
-	return modelUsers, nil
+func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
+	//panic(fmt.Errorf("not implemented: Users - users"))
+	return r.client.User.Query().Paginate(ctx, after, first, before, last, where)
 }
 
 // Query returns QueryResolver implementation.

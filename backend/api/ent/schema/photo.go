@@ -33,6 +33,7 @@ func (Photo) Edges() []ent.Edge {
 // アノテーション
 func (Photo) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
 		entgql.QueryField(),
 		entgql.Mutations(entgql.MutationCreate(), entgql.MutationUpdate()),
 	}
