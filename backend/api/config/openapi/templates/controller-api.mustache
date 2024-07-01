@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+{{#operation}}
 type {{classname}} struct {
-	handlers handlers.{{vendorExtensions.x-go-custom-tag}}Handlers
+	handlers handlers.{{#tags}}{{name}}{{/tags}}Handlers
 }
 
-func New{{classname}}(handlers handlers.{{vendorExtensions.x-go-custom-tag}}Handlers) {{classname}} {
+func New{{classname}}(handlers handlers.{{#tags}}{{name}}{{/tags}}Handlers) {{classname}} {
 	return {{classname}}{handlers: handlers}
 }
 
-{{#operation}}
 // {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
 // {{{.}}} {{/summary}}
 {{#isDeprecated}}
@@ -25,6 +25,5 @@ func New{{classname}}(handlers handlers.{{vendorExtensions.x-go-custom-tag}}Hand
 func (api *{{classname}}) {{nickname}}(c *gin.Context) {
 	api.handlers.{{operationId}}(c)
 }
-
 {{/operation}}
 {{/operations}}
