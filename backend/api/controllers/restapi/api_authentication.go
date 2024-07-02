@@ -24,7 +24,20 @@ func NewAuthenticationAPI(handlers handlers.AuthenticationHandlers) Authenticati
 }
 
 // Post /login
-// ログイン
+// ログイン 
 func (api *AuthenticationAPI) PostLogin(c *gin.Context) {
 	api.handlers.PostLogin(c)
+}
+type AuthenticationAPI struct {
+	handlers handlers.AuthenticationHandlers
+}
+
+func NewAuthenticationAPI(handlers handlers.AuthenticationHandlers) AuthenticationAPI {
+	return AuthenticationAPI{handlers: handlers}
+}
+
+// Post /logout
+// ログアウト 
+func (api *AuthenticationAPI) PostLogout(c *gin.Context) {
+	api.handlers.PostLogout(c)
 }

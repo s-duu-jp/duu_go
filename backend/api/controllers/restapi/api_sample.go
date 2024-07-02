@@ -24,7 +24,7 @@ func NewSampleAPI(handlers handlers.SampleHandlers) SampleAPI {
 }
 
 // Post /sample
-// サンプルPOSTリクエスト
+// サンプルPOSTリクエスト 
 func (api *SampleAPI) PostSample(c *gin.Context) {
 	api.handlers.PostSample(c)
 }

@@ -93,6 +93,12 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.AuthenticationAPI.PostLogin,
 		},
 		{
+			"PostLogout",
+			http.MethodPost,
+			"/logout",
+			handleFunctions.AuthenticationAPI.PostLogout,
+		},
+		{
 			"PostSample",
 			http.MethodPost,
 			"/sample",

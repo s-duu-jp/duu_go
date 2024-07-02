@@ -45,6 +45,27 @@ paths:
                     example: Invalid credentials
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: ログアウト
+      operationId: PostLogout
+      responses:
+        '200':
+          description: ログアウト成功
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid credentials
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /sample:
     post:
       tags:
