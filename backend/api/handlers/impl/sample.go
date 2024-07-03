@@ -12,9 +12,9 @@ import (
 type sampleHandlersImpl struct {
 }
 
-var _ handlers.SampleHandlers = &sampleHandlersImpl{}
+var _ handlers.SampleAPIHandlers = &sampleHandlersImpl{}
 
-func NewSampleHandlers() handlers.SampleHandlers {
+func NewSampleHandlers() handlers.SampleAPIHandlers {
 	return &sampleHandlersImpl{}
 }
 

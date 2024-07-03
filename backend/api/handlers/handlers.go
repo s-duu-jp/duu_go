@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthenticationHandlers interface {
+type AuthenticationAPIHandlers interface {
 	PostLogin(c *gin.Context)
 	PostLogout(c *gin.Context)
 }
 
-type SampleHandlers interface {
+type SampleAPIHandlers interface {
 	PostSample(c *gin.Context)
 }

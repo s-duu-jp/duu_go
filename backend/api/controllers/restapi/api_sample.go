@@ -15,13 +15,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+
 type SampleAPI struct {
-	handlers handlers.SampleHandlers
+	handlers handlers.SampleAPIHandlers
 }
 
-func NewSampleAPI(handlers handlers.SampleHandlers) SampleAPI {
+func NewSampleAPI(handlers handlers.SampleAPIHandlers) SampleAPI {
 	return SampleAPI{handlers: handlers}
 }
+
 
 // Post /sample
 // サンプルPOSTリクエスト 

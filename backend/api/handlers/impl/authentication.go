@@ -12,9 +12,9 @@ import (
 type authenticationHandlersImpl struct {
 }
 
-var _ handlers.AuthenticationHandlers = &authenticationHandlersImpl{}
+var _ handlers.AuthenticationAPIHandlers = &authenticationHandlersImpl{}
 
-func NewAuthenticationHandlers() handlers.AuthenticationHandlers {
+func NewAuthenticationHandlers() handlers.AuthenticationAPIHandlers {
 	return &authenticationHandlersImpl{}
 }
 

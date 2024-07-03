@@ -1,22 +1,22 @@
 {{>partial_header}}
 package {{packageName}}
 
-{{#operations}}
 import (
 	"api/handlers"
 
 	"github.com/gin-gonic/gin"
 )
 
-{{#operation}}
 type {{classname}} struct {
-	handlers handlers.{{#tags}}{{name}}{{/tags}}Handlers
+	handlers handlers.{{classname}}Handlers
 }
 
-func New{{classname}}(handlers handlers.{{#tags}}{{name}}{{/tags}}Handlers) {{classname}} {
+func New{{classname}}(handlers handlers.{{classname}}Handlers) {{classname}} {
 	return {{classname}}{handlers: handlers}
 }
 
+{{#operations}}
+{{#operation}}
 // {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
 // {{{.}}} {{/summary}}
 {{#isDeprecated}}
