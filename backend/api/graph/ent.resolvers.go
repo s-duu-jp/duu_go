@@ -6,11 +6,10 @@ package graph
 
 import (
 	"api/ent"
-	"api/ent/user"
-	"api/graph/model"
 	"context"
 	"fmt"
-	"strconv"
+
+	"entgo.io/contrib/entgql"
 )
 
 // Node is the resolver for the node field.
@@ -24,67 +23,11 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
-	fmt.Print("Users")
-
-	query := r.client.User.Query()
-
-	if where != nil {
-		if where.Name != nil {
-			query = query.Where(user.NameEQ(*where.Name))
-		}
-		if where.Email != nil {
-			query = query.Where(user.EmailEQ(*where.Email))
-		}
-	}
-
-	var users []*ent.User
-	var err error
-
-	if first != nil {
-		users, err = query.Limit(*first).All(ctx)
-	} else if last != nil {
-		users, err = query.Limit(*last).All(ctx)
-	} else {
-		users, err = query.All(ctx)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to query users: %w", err)
-	}
-
-	userEdges := make([]*model.UserEdge, len(users))
-	for i, user := range users {
-		cursor := fmt.Sprintf("%d", user.ID)
-		userEdges[i] = &model.UserEdge{
-			Node: &model.User{
-				ID:         strconv.Itoa(user.ID),
-				Sid:        user.Sid,
-				UID:        user.UID,
-				Name:       user.Name,
-				Email:      user.Email,
-				RoleType:   user.RoleType,
-				StatusType: user.StatusType,
-				OauthType:  user.OauthType,
-			},
-			Cursor: cursor,
-		}
-	}
-
-	userConnection := &model.UserConnection{
-		Edges:    userEdges,
-		PageInfo: &model.PageInfo{},
-	}
-
-	if len(userEdges) > 0 {
-		startCursor := userEdges[0].Cursor
-		endCursor := userEdges[len(userEdges)-1].Cursor
-		userConnection.PageInfo.StartCursor = &startCursor
-		userConnection.PageInfo.EndCursor = &endCursor
-		userConnection.PageInfo.HasNextPage = len(users) == *first
-	}
-
-	return userConnection, nil
+func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error) {
+	return r.client.User.Query().
+		Paginate(ctx, after, first, before, last,
+			ent.WithUserOrder(orderBy),
+		)
 }
 
 // Query returns QueryResolver implementation.

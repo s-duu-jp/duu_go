@@ -6,6 +6,9 @@ import (
 	"api/ent/user"
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"strconv"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
@@ -301,6 +304,161 @@ func (u *UserQuery) Paginate(
 	}
 	conn.build(nodes, pager, after, first, before, last)
 	return conn, nil
+}
+
+var (
+	// UserOrderFieldSid orders User by sid.
+	UserOrderFieldSid = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.Sid, nil
+		},
+		column: user.FieldSid,
+		toTerm: user.BySid,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.Sid,
+			}
+		},
+	}
+	// UserOrderFieldUID orders User by uid.
+	UserOrderFieldUID = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.UID, nil
+		},
+		column: user.FieldUID,
+		toTerm: user.ByUID,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.UID,
+			}
+		},
+	}
+	// UserOrderFieldName orders User by name.
+	UserOrderFieldName = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.Name, nil
+		},
+		column: user.FieldName,
+		toTerm: user.ByName,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.Name,
+			}
+		},
+	}
+	// UserOrderFieldEmail orders User by email.
+	UserOrderFieldEmail = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.Email, nil
+		},
+		column: user.FieldEmail,
+		toTerm: user.ByEmail,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.Email,
+			}
+		},
+	}
+	// UserOrderFieldRoleType orders User by role_type.
+	UserOrderFieldRoleType = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.RoleType, nil
+		},
+		column: user.FieldRoleType,
+		toTerm: user.ByRoleType,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.RoleType,
+			}
+		},
+	}
+	// UserOrderFieldStatusType orders User by status_type.
+	UserOrderFieldStatusType = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.StatusType, nil
+		},
+		column: user.FieldStatusType,
+		toTerm: user.ByStatusType,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.StatusType,
+			}
+		},
+	}
+	// UserOrderFieldOauthType orders User by oauth_type.
+	UserOrderFieldOauthType = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.OauthType, nil
+		},
+		column: user.FieldOauthType,
+		toTerm: user.ByOauthType,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.OauthType,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f UserOrderField) String() string {
+	var str string
+	switch f.column {
+	case UserOrderFieldSid.column:
+		str = "SID"
+	case UserOrderFieldUID.column:
+		str = "UID"
+	case UserOrderFieldName.column:
+		str = "NAME"
+	case UserOrderFieldEmail.column:
+		str = "EMAIL"
+	case UserOrderFieldRoleType.column:
+		str = "ROLE_TYPE"
+	case UserOrderFieldStatusType.column:
+		str = "STATUS_TYPE"
+	case UserOrderFieldOauthType.column:
+		str = "OAUTH_TYPE"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f UserOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *UserOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("UserOrderField %T must be a string", v)
+	}
+	switch str {
+	case "SID":
+		*f = *UserOrderFieldSid
+	case "UID":
+		*f = *UserOrderFieldUID
+	case "NAME":
+		*f = *UserOrderFieldName
+	case "EMAIL":
+		*f = *UserOrderFieldEmail
+	case "ROLE_TYPE":
+		*f = *UserOrderFieldRoleType
+	case "STATUS_TYPE":
+		*f = *UserOrderFieldStatusType
+	case "OAUTH_TYPE":
+		*f = *UserOrderFieldOauthType
+	default:
+		return fmt.Errorf("%s is not a valid UserOrderField", str)
+	}
+	return nil
 }
 
 // UserOrderField defines the ordering field of User.
