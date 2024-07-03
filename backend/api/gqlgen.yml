@@ -89,6 +89,3 @@ models:
   Node:
     model:
       - api/ent.Noder
-#  User:
-#    model:
-#      - api/ent.User
