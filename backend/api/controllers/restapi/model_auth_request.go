@@ -9,9 +9,9 @@
 
 package openapi
 
-type PostLogin200Response struct {
+type AuthRequest struct {
 
-	AccessToken string `json:"access_token,omitempty"`
+	Uid string `json:"uid,omitempty" binding:"required"`
 
-	RefreshToken string `json:"refresh_token,omitempty"`
+	Password string `json:"password,omitempty" binding:"required"`
 }

@@ -32,34 +32,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  access_token:
-                    type: string
-                    example: jwt_access_token
-                  refresh_token:
-                    type: string
-                    example: jwt_refresh_token
+                $ref: '#/components/schemas/AuthRequest'
         '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid credentials
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
+          $ref: '#/components/responses/InternalServerError'
   /logout:
     post:
       tags:
@@ -86,25 +63,9 @@ paths:
                     type: string
                     example: Successfully logged out
         '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid session
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
+          $ref: '#/components/responses/InternalServerError'
   /refresh-token:
     post:
       tags:
@@ -134,22 +95,38 @@ paths:
                     type: string
                     example: jwt_access_token
         '401':
-          description: 認証失敗
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid refresh token
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          description: サーバーエラー
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Unexpected error
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    AuthRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          x-go-custom-tag: binding:"required"
+        password:
+          type: string
+          x-go-custom-tag: binding:"required"
+  responses:
+    InternalServerError:
+      description: サーバーエラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unexpected error
+    Unauthorized:
+      description: 認証失敗
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Invalid credentials

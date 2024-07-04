@@ -1,7 +1,6 @@
 {{>partial_header}}
 package {{packageName}}
 
-{{#operations}}
 import (
 	"api/handlers"
 
@@ -9,8 +8,14 @@ import (
 )
 
 type {{classname}} struct {
+	handlers handlers.{{classname}}Handlers
 }
 
+func New{{classname}}(handlers handlers.{{classname}}Handlers) {{classname}} {
+	return {{classname}}{handlers: handlers}
+}
+
+{{#operations}}
 {{#operation}}
 // {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
 // {{{.}}} {{/summary}}
@@ -18,11 +23,7 @@ type {{classname}} struct {
 // Deprecated
 {{/isDeprecated}}
 func (api *{{classname}}) {{nickname}}(c *gin.Context) {
-	factory := func() interface{} {
-		return &{{operationId}}Request{}
-	}
-	handlers.{{operationId}}(c, factory)
+	api.handlers.{{operationId}}(c)
 }
-
 {{/operation}}
 {{/operations}}
