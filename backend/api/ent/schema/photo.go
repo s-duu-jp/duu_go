@@ -1,11 +1,12 @@
 package schema
 
 import (
+	entHelper "api/helpers"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
-	"entgo.io/ent/schema/field"
 )
 
 // Photo holds the schema definition for the Photo entity.
@@ -16,8 +17,8 @@ type Photo struct {
 // Fields of the Photo.
 func (Photo) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name"),
-		field.String("url"),
+		entHelper.OrderField("name"),
+		entHelper.OrderField("url"),
 	}
 }
 

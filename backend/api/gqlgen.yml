@@ -12,10 +12,10 @@ exec:
 #   filename: graph/federation.go
 #   package: graph
 
-# Where should any generated models go?
-model:
-  filename: graph/model/models_gen.go
-  package: model
+# # Where should any generated models go?
+# model:
+#   filename: graph/model/models_gen.go
+#   package: model
 
 # Where should the resolver implementations go?
 resolver:
@@ -68,6 +68,8 @@ resolver:
 autobind:
   - api/ent
   - api/ent/user
+  - api/ent/photo
+  - api/ent/organization
 
 # This section declares type mapping between the GraphQL and go type systems
 #

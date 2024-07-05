@@ -23,13 +23,13 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 }
 
 // Organizations is the resolver for the organizations field.
-func (r *queryResolver) Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error) {
-	panic(fmt.Errorf("not implemented: Organizations - organizations"))
+func (r *queryResolver) Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.OrganizationOrder, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error) {
+	return r.client.Organization.Query().Paginate(ctx, after, first, before, last, ent.WithOrganizationOrder(orderBy))
 }
 
 // Photos is the resolver for the photos field.
-func (r *queryResolver) Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error) {
-	panic(fmt.Errorf("not implemented: Photos - photos"))
+func (r *queryResolver) Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PhotoOrder, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error) {
+	return r.client.Photo.Query().Paginate(ctx, after, first, before, last, ent.WithPhotoOrder(orderBy))
 }
 
 // Users is the resolver for the users field.

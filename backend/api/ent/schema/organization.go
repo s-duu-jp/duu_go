@@ -1,11 +1,12 @@
 package schema
 
 import (
+	entHelper "api/helpers"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
-	"entgo.io/ent/schema/field"
 )
 
 // Organization holds the schema definition for the Organization entity.
@@ -16,7 +17,7 @@ type Organization struct {
 // Fields of the Organization.
 func (Organization) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name"),
+		entHelper.OrderField("name"),
 	}
 }
 

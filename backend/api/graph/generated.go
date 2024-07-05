@@ -97,8 +97,8 @@ type ComplexityRoot struct {
 	Query struct {
 		Node          func(childComplexity int, id string) int
 		Nodes         func(childComplexity int, ids []string) int
-		Organizations func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) int
-		Photos        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) int
+		Organizations func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.OrganizationOrder, where *ent.OrganizationWhereInput) int
+		Photos        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PhotoOrder, where *ent.PhotoWhereInput) int
 		Users         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
@@ -134,8 +134,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Node(ctx context.Context, id string) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []string) ([]ent.Noder, error)
-	Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error)
-	Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error)
+	Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.OrganizationOrder, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error)
+	Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.PhotoOrder, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error)
 	Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error)
 }
 
@@ -351,7 +351,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Organizations(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.OrganizationWhereInput)), true
+		return e.complexity.Query.Organizations(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].(*ent.OrganizationOrder), args["where"].(*ent.OrganizationWhereInput)), true
 
 	case "Query.photos":
 		if e.complexity.Query.Photos == nil {
@@ -363,7 +363,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Photos(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.PhotoWhereInput)), true
+		return e.complexity.Query.Photos(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].(*ent.PhotoOrder), args["where"].(*ent.PhotoWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -500,7 +500,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateOrganizationInput,
 		ec.unmarshalInputCreatePhotoInput,
 		ec.unmarshalInputCreateUserInput,
+		ec.unmarshalInputOrganizationOrder,
 		ec.unmarshalInputOrganizationWhereInput,
+		ec.unmarshalInputPhotoOrder,
 		ec.unmarshalInputPhotoWhereInput,
 		ec.unmarshalInputUpdateOrganizationInput,
 		ec.unmarshalInputUpdatePhotoInput,
@@ -723,15 +725,24 @@ func (ec *executionContext) field_Query_organizations_args(ctx context.Context, 
 		}
 	}
 	args["last"] = arg3
-	var arg4 *ent.OrganizationWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx, tmp)
+	var arg4 *ent.OrganizationOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOOrganizationOrder2ᚖapiᚋentᚐOrganizationOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	var arg5 *ent.OrganizationWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -774,15 +785,24 @@ func (ec *executionContext) field_Query_photos_args(ctx context.Context, rawArgs
 		}
 	}
 	args["last"] = arg3
-	var arg4 *ent.PhotoWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx, tmp)
+	var arg4 *ent.PhotoOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOPhotoOrder2ᚖapiᚋentᚐPhotoOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	var arg5 *ent.PhotoWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -2082,7 +2102,7 @@ func (ec *executionContext) _Query_organizations(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Organizations(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.OrganizationWhereInput))
+		return ec.resolvers.Query().Organizations(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.OrganizationOrder), fc.Args["where"].(*ent.OrganizationWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2145,7 +2165,7 @@ func (ec *executionContext) _Query_photos(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Photos(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.PhotoWhereInput))
+		return ec.resolvers.Query().Photos(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.PhotoOrder), fc.Args["where"].(*ent.PhotoWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5078,6 +5098,44 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputOrganizationOrder(ctx context.Context, obj interface{}) (ent.OrganizationOrder, error) {
+	var it ent.OrganizationOrder
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNOrganizationOrderField2ᚖapiᚋentᚐOrganizationOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Context, obj interface{}) (ent.OrganizationWhereInput, error) {
 	var it ent.OrganizationWhereInput
 	asMap := map[string]interface{}{}
@@ -5274,6 +5332,44 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 				return it, err
 			}
 			it.HasUsersWith = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPhotoOrder(ctx context.Context, obj interface{}) (ent.PhotoOrder, error) {
+	var it ent.PhotoOrder
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNPhotoOrderField2ᚖapiᚋentᚐPhotoOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
 		}
 	}
 
@@ -8049,6 +8145,22 @@ func (ec *executionContext) marshalNOrganizationConnection2ᚖapiᚋentᚐOrgani
 	return ec._OrganizationConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOrganizationOrderField2ᚖapiᚋentᚐOrganizationOrderField(ctx context.Context, v interface{}) (*ent.OrganizationOrderField, error) {
+	var res = new(ent.OrganizationOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrganizationOrderField2ᚖapiᚋentᚐOrganizationOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.OrganizationOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalNOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx context.Context, v interface{}) (*ent.OrganizationWhereInput, error) {
 	res, err := ec.unmarshalInputOrganizationWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
@@ -8080,6 +8192,22 @@ func (ec *executionContext) marshalNPhotoConnection2ᚖapiᚋentᚐPhotoConnecti
 		return graphql.Null
 	}
 	return ec._PhotoConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPhotoOrderField2ᚖapiᚋentᚐPhotoOrderField(ctx context.Context, v interface{}) (*ent.PhotoOrderField, error) {
+	var res = new(ent.PhotoOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPhotoOrderField2ᚖapiᚋentᚐPhotoOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.PhotoOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalNPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx context.Context, v interface{}) (*ent.PhotoWhereInput, error) {
@@ -8578,6 +8706,14 @@ func (ec *executionContext) marshalOOrganizationEdge2ᚖapiᚋentᚐOrganization
 	return ec._OrganizationEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOOrganizationOrder2ᚖapiᚋentᚐOrganizationOrder(ctx context.Context, v interface{}) (*ent.OrganizationOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrganizationOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚕᚖapiᚋentᚐOrganizationWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.OrganizationWhereInput, error) {
 	if v == nil {
 		return nil, nil
@@ -8706,6 +8842,14 @@ func (ec *executionContext) marshalOPhotoEdge2ᚖapiᚋentᚐPhotoEdge(ctx conte
 		return graphql.Null
 	}
 	return ec._PhotoEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPhotoOrder2ᚖapiᚋentᚐPhotoOrder(ctx context.Context, v interface{}) (*ent.PhotoOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPhotoOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOPhotoWhereInput2ᚕᚖapiᚋentᚐPhotoWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.PhotoWhereInput, error) {

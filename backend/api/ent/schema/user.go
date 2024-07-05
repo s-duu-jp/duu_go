@@ -6,7 +6,8 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
+
+	entHelper "api/helpers"
 )
 
 // User holds the schema definition for the User entity.
@@ -17,18 +18,15 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("sid").
-			DefaultFunc(func() string {
-				return uuid.New().String()
-			}).Annotations(entgql.OrderField("SID")),
-		field.String("uid").Unique().Annotations(entgql.OrderField("UID")),
-		field.String("name").Annotations(entgql.OrderField("NAME")),
-		field.String("email").Unique().Annotations(entgql.OrderField("EMAIL")),
+		entHelper.UuidField("sid"),
+		entHelper.UniqueField("uid"),
+		entHelper.OrderField("name"),
+		entHelper.UniqueField("email"),
 		field.String("password").Optional().Sensitive(),
-		field.String("role_type").Annotations(entgql.OrderField("ROLE_TYPE")),
-		field.String("status_type").Annotations(entgql.OrderField("STATUS_TYPE")),
-		field.String("oauth_type").Annotations(entgql.OrderField("OAUTH_TYPE")),
-		field.String("sub").Optional(),
+		entHelper.OrderField("role_type"),
+		entHelper.OrderField("status_type"),
+		entHelper.OrderField("oauth_type"),
+		entHelper.OptionalField("sub"),
 	}
 }
 

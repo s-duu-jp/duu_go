@@ -308,6 +308,53 @@ func (o *OrganizationQuery) Paginate(
 	return conn, nil
 }
 
+var (
+	// OrganizationOrderFieldName orders Organization by name.
+	OrganizationOrderFieldName = &OrganizationOrderField{
+		Value: func(o *Organization) (ent.Value, error) {
+			return o.Name, nil
+		},
+		column: organization.FieldName,
+		toTerm: organization.ByName,
+		toCursor: func(o *Organization) Cursor {
+			return Cursor{
+				ID:    o.ID,
+				Value: o.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f OrganizationOrderField) String() string {
+	var str string
+	switch f.column {
+	case OrganizationOrderFieldName.column:
+		str = "name"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f OrganizationOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *OrganizationOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("OrganizationOrderField %T must be a string", v)
+	}
+	switch str {
+	case "name":
+		*f = *OrganizationOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid OrganizationOrderField", str)
+	}
+	return nil
+}
+
 // OrganizationOrderField defines the ordering field of Organization.
 type OrganizationOrderField struct {
 	// Value extracts the ordering value from the given Organization.
@@ -555,6 +602,71 @@ func (ph *PhotoQuery) Paginate(
 	}
 	conn.build(nodes, pager, after, first, before, last)
 	return conn, nil
+}
+
+var (
+	// PhotoOrderFieldName orders Photo by name.
+	PhotoOrderFieldName = &PhotoOrderField{
+		Value: func(ph *Photo) (ent.Value, error) {
+			return ph.Name, nil
+		},
+		column: photo.FieldName,
+		toTerm: photo.ByName,
+		toCursor: func(ph *Photo) Cursor {
+			return Cursor{
+				ID:    ph.ID,
+				Value: ph.Name,
+			}
+		},
+	}
+	// PhotoOrderFieldURL orders Photo by url.
+	PhotoOrderFieldURL = &PhotoOrderField{
+		Value: func(ph *Photo) (ent.Value, error) {
+			return ph.URL, nil
+		},
+		column: photo.FieldURL,
+		toTerm: photo.ByURL,
+		toCursor: func(ph *Photo) Cursor {
+			return Cursor{
+				ID:    ph.ID,
+				Value: ph.URL,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f PhotoOrderField) String() string {
+	var str string
+	switch f.column {
+	case PhotoOrderFieldName.column:
+		str = "name"
+	case PhotoOrderFieldURL.column:
+		str = "url"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f PhotoOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *PhotoOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("PhotoOrderField %T must be a string", v)
+	}
+	switch str {
+	case "name":
+		*f = *PhotoOrderFieldName
+	case "url":
+		*f = *PhotoOrderFieldURL
+	default:
+		return fmt.Errorf("%s is not a valid PhotoOrderField", str)
+	}
+	return nil
 }
 
 // PhotoOrderField defines the ordering field of Photo.
@@ -905,6 +1017,20 @@ var (
 			}
 		},
 	}
+	// UserOrderFieldSub orders User by sub.
+	UserOrderFieldSub = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.Sub, nil
+		},
+		column: user.FieldSub,
+		toTerm: user.BySub,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.Sub,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -912,19 +1038,21 @@ func (f UserOrderField) String() string {
 	var str string
 	switch f.column {
 	case UserOrderFieldSid.column:
-		str = "SID"
+		str = "sid"
 	case UserOrderFieldUID.column:
-		str = "UID"
+		str = "uid"
 	case UserOrderFieldName.column:
-		str = "NAME"
+		str = "name"
 	case UserOrderFieldEmail.column:
-		str = "EMAIL"
+		str = "email"
 	case UserOrderFieldRoleType.column:
-		str = "ROLE_TYPE"
+		str = "role_type"
 	case UserOrderFieldStatusType.column:
-		str = "STATUS_TYPE"
+		str = "status_type"
 	case UserOrderFieldOauthType.column:
-		str = "OAUTH_TYPE"
+		str = "oauth_type"
+	case UserOrderFieldSub.column:
+		str = "sub"
 	}
 	return str
 }
@@ -941,20 +1069,22 @@ func (f *UserOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("UserOrderField %T must be a string", v)
 	}
 	switch str {
-	case "SID":
+	case "sid":
 		*f = *UserOrderFieldSid
-	case "UID":
+	case "uid":
 		*f = *UserOrderFieldUID
-	case "NAME":
+	case "name":
 		*f = *UserOrderFieldName
-	case "EMAIL":
+	case "email":
 		*f = *UserOrderFieldEmail
-	case "ROLE_TYPE":
+	case "role_type":
 		*f = *UserOrderFieldRoleType
-	case "STATUS_TYPE":
+	case "status_type":
 		*f = *UserOrderFieldStatusType
-	case "OAUTH_TYPE":
+	case "oauth_type":
 		*f = *UserOrderFieldOauthType
+	case "sub":
+		*f = *UserOrderFieldSub
 	default:
 		return fmt.Errorf("%s is not a valid UserOrderField", str)
 	}
