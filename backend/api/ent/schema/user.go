@@ -20,14 +20,14 @@ func (User) Fields() []ent.Field {
 		field.String("sid").
 			DefaultFunc(func() string {
 				return uuid.New().String()
-			}),
-		field.String("uid").Unique(),
-		field.String("name"),
-		field.String("email").Unique(),
+			}).Annotations(entgql.OrderField("SID")),
+		field.String("uid").Unique().Annotations(entgql.OrderField("UID")),
+		field.String("name").Annotations(entgql.OrderField("NAME")),
+		field.String("email").Unique().Annotations(entgql.OrderField("EMAIL")),
 		field.String("password").Optional().Sensitive(),
-		field.String("role_type"),
-		field.String("status_type"),
-		field.String("oauth_type"),
+		field.String("role_type").Annotations(entgql.OrderField("ROLE_TYPE")),
+		field.String("status_type").Annotations(entgql.OrderField("STATUS_TYPE")),
+		field.String("oauth_type").Annotations(entgql.OrderField("OAUTH_TYPE")),
 		field.String("sub").Optional(),
 	}
 }

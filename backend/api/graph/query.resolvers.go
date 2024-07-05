@@ -6,9 +6,10 @@ package graph
 
 import (
 	"api/ent"
-	"api/graph/model"
 	"context"
 	"fmt"
+
+	"entgo.io/contrib/entgql"
 )
 
 // Node is the resolver for the node field.
@@ -22,21 +23,18 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 }
 
 // Organizations is the resolver for the organizations field.
-func (r *queryResolver) Organizations(ctx context.Context, after *string, first *int, before *string, last *int, where *model.OrganizationWhereInput) (*model.OrganizationConnection, error) {
-	//panic(fmt.Errorf("not implemented: Organizations - organizations"))
-	return r.client.Organizations.Query().Paginate(ctx, after, first, before, last, where)
+func (r *queryResolver) Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error) {
+	panic(fmt.Errorf("not implemented: Organizations - organizations"))
 }
 
 // Photos is the resolver for the photos field.
-func (r *queryResolver) Photos(ctx context.Context, after *string, first *int, before *string, last *int, where *model.PhotoWhereInput) (*model.PhotoConnection, error) {
-	//panic(fmt.Errorf("not implemented: Photos - photos"))
-	return r.client.Photos.Query().Paginate(ctx, after, first, before, last, where)
+func (r *queryResolver) Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error) {
+	panic(fmt.Errorf("not implemented: Photos - photos"))
 }
 
 // Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error) {
-	//panic(fmt.Errorf("not implemented: Users - users"))
-	return r.client.User.Query().Paginate(ctx, after, first, before, last, where)
+func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error) {
+	return r.client.User.Query().Paginate(ctx, after, first, before, last, ent.WithUserOrder(orderBy))
 }
 
 // Query returns QueryResolver implementation.

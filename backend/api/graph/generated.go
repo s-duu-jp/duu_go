@@ -4,7 +4,6 @@ package graph
 
 import (
 	"api/ent"
-	"api/graph/model"
 	"bytes"
 	"context"
 	"embed"
@@ -14,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -49,7 +49,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateUser func(childComplexity int, input model.CreateUserInput) int
+		CreateUser func(childComplexity int, input ent.CreateUserInput) int
 	}
 
 	Organization struct {
@@ -97,9 +97,9 @@ type ComplexityRoot struct {
 	Query struct {
 		Node          func(childComplexity int, id string) int
 		Nodes         func(childComplexity int, ids []string) int
-		Organizations func(childComplexity int, after *string, first *int, before *string, last *int, where *model.OrganizationWhereInput) int
-		Photos        func(childComplexity int, after *string, first *int, before *string, last *int, where *model.PhotoWhereInput) int
-		Users         func(childComplexity int, after *string, first *int, before *string, last *int, where *model.UserWhereInput) int
+		Organizations func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) int
+		Photos        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) int
+		Users         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	User struct {
@@ -129,14 +129,14 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error)
+	CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error)
 }
 type QueryResolver interface {
 	Node(ctx context.Context, id string) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []string) ([]ent.Noder, error)
-	Organizations(ctx context.Context, after *string, first *int, before *string, last *int, where *model.OrganizationWhereInput) (*model.OrganizationConnection, error)
-	Photos(ctx context.Context, after *string, first *int, before *string, last *int, where *model.PhotoWhereInput) (*model.PhotoConnection, error)
-	Users(ctx context.Context, after *string, first *int, before *string, last *int, where *model.UserWhereInput) (*model.UserConnection, error)
+	Organizations(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrganizationWhereInput) (*ent.OrganizationConnection, error)
+	Photos(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.PhotoWhereInput) (*ent.PhotoConnection, error)
+	Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy *ent.UserOrder, where *ent.UserWhereInput) (*ent.UserConnection, error)
 }
 
 type executableSchema struct {
@@ -168,7 +168,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.CreateUserInput)), true
+		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(ent.CreateUserInput)), true
 
 	case "Organization.id":
 		if e.complexity.Organization.ID == nil {
@@ -351,7 +351,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Organizations(childComplexity, args["after"].(*string), args["first"].(*int), args["before"].(*string), args["last"].(*int), args["where"].(*model.OrganizationWhereInput)), true
+		return e.complexity.Query.Organizations(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.OrganizationWhereInput)), true
 
 	case "Query.photos":
 		if e.complexity.Query.Photos == nil {
@@ -363,7 +363,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Photos(childComplexity, args["after"].(*string), args["first"].(*int), args["before"].(*string), args["last"].(*int), args["where"].(*model.PhotoWhereInput)), true
+		return e.complexity.Query.Photos(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["where"].(*ent.PhotoWhereInput)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -375,7 +375,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Users(childComplexity, args["after"].(*string), args["first"].(*int), args["before"].(*string), args["last"].(*int), args["where"].(*model.UserWhereInput)), true
+		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].(*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -505,6 +505,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateOrganizationInput,
 		ec.unmarshalInputUpdatePhotoInput,
 		ec.unmarshalInputUpdateUserInput,
+		ec.unmarshalInputUserOrder,
 		ec.unmarshalInputUserWhereInput,
 	)
 	first := true
@@ -626,10 +627,10 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.CreateUserInput
+	var arg0 ent.CreateUserInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateUserInput2apiᚋgraphᚋmodelᚐCreateUserInput(ctx, tmp)
+		arg0, err = ec.unmarshalNCreateUserInput2apiᚋentᚐCreateUserInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -686,10 +687,10 @@ func (ec *executionContext) field_Query_nodes_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_organizations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -704,10 +705,10 @@ func (ec *executionContext) field_Query_organizations_args(ctx context.Context, 
 		}
 	}
 	args["first"] = arg1
-	var arg2 *string
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -722,10 +723,10 @@ func (ec *executionContext) field_Query_organizations_args(ctx context.Context, 
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.OrganizationWhereInput
+	var arg4 *ent.OrganizationWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOOrganizationWhereInput2ᚖapiᚋgraphᚋmodelᚐOrganizationWhereInput(ctx, tmp)
+		arg4, err = ec.unmarshalOOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -737,10 +738,10 @@ func (ec *executionContext) field_Query_organizations_args(ctx context.Context, 
 func (ec *executionContext) field_Query_photos_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -755,10 +756,10 @@ func (ec *executionContext) field_Query_photos_args(ctx context.Context, rawArgs
 		}
 	}
 	args["first"] = arg1
-	var arg2 *string
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -773,10 +774,10 @@ func (ec *executionContext) field_Query_photos_args(ctx context.Context, rawArgs
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.PhotoWhereInput
+	var arg4 *ent.PhotoWhereInput
 	if tmp, ok := rawArgs["where"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOPhotoWhereInput2ᚖapiᚋgraphᚋmodelᚐPhotoWhereInput(ctx, tmp)
+		arg4, err = ec.unmarshalOPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -788,10 +789,10 @@ func (ec *executionContext) field_Query_photos_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
+	var arg0 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -806,10 +807,10 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["first"] = arg1
-	var arg2 *string
+	var arg2 *entgql.Cursor[int]
 	if tmp, ok := rawArgs["before"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -824,15 +825,24 @@ func (ec *executionContext) field_Query_users_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["last"] = arg3
-	var arg4 *model.UserWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg4, err = ec.unmarshalOUserWhereInput2ᚖapiᚋgraphᚋmodelᚐUserWhereInput(ctx, tmp)
+	var arg4 *ent.UserOrder
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+		arg4, err = ec.unmarshalOUserOrder2ᚖapiᚋentᚐUserOrder(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["where"] = arg4
+	args["orderBy"] = arg4
+	var arg5 *ent.UserWhereInput
+	if tmp, ok := rawArgs["where"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+		arg5, err = ec.unmarshalOUserWhereInput2ᚖapiᚋentᚐUserWhereInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["where"] = arg5
 	return args, nil
 }
 
@@ -888,7 +898,7 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(model.CreateUserInput))
+		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(ent.CreateUserInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -900,9 +910,9 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -953,7 +963,7 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
+func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.CollectedField, obj *ent.Organization) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Organization_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -979,9 +989,9 @@ func (ec *executionContext) _Organization_id(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Organization_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -997,7 +1007,7 @@ func (ec *executionContext) fieldContext_Organization_id(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Organization_name(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
+func (ec *executionContext) _Organization_name(ctx context.Context, field graphql.CollectedField, obj *ent.Organization) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Organization_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1041,7 +1051,7 @@ func (ec *executionContext) fieldContext_Organization_name(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Organization_users(ctx context.Context, field graphql.CollectedField, obj *model.Organization) (ret graphql.Marshaler) {
+func (ec *executionContext) _Organization_users(ctx context.Context, field graphql.CollectedField, obj *ent.Organization) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Organization_users(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1055,7 +1065,7 @@ func (ec *executionContext) _Organization_users(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Users, nil
+		return obj.Users(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1064,16 +1074,16 @@ func (ec *executionContext) _Organization_users(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.User)
+	res := resTmp.([]*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚕᚖapiᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚕᚖapiᚋentᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Organization_users(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Organization",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
@@ -1106,7 +1116,7 @@ func (ec *executionContext) fieldContext_Organization_users(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _OrganizationConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrganizationConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.OrganizationConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrganizationConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1129,9 +1139,9 @@ func (ec *executionContext) _OrganizationConnection_edges(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.OrganizationEdge)
+	res := resTmp.([]*ent.OrganizationEdge)
 	fc.Result = res
-	return ec.marshalOOrganizationEdge2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationEdge(ctx, field.Selections, res)
+	return ec.marshalOOrganizationEdge2ᚕᚖapiᚋentᚐOrganizationEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrganizationConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1153,7 +1163,7 @@ func (ec *executionContext) fieldContext_OrganizationConnection_edges(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _OrganizationConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrganizationConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.OrganizationConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrganizationConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1179,9 +1189,9 @@ func (ec *executionContext) _OrganizationConnection_pageInfo(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(entgql.PageInfo[int])
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖapiᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrganizationConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1207,7 +1217,7 @@ func (ec *executionContext) fieldContext_OrganizationConnection_pageInfo(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OrganizationConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrganizationConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.OrganizationConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrganizationConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1251,7 +1261,7 @@ func (ec *executionContext) fieldContext_OrganizationConnection_totalCount(_ con
 	return fc, nil
 }
 
-func (ec *executionContext) _OrganizationEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrganizationEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.OrganizationEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrganizationEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1274,9 +1284,9 @@ func (ec *executionContext) _OrganizationEdge_node(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Organization)
+	res := resTmp.(*ent.Organization)
 	fc.Result = res
-	return ec.marshalOOrganization2ᚖapiᚋgraphᚋmodelᚐOrganization(ctx, field.Selections, res)
+	return ec.marshalOOrganization2ᚖapiᚋentᚐOrganization(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrganizationEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1300,7 +1310,7 @@ func (ec *executionContext) fieldContext_OrganizationEdge_node(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _OrganizationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.OrganizationEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _OrganizationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.OrganizationEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrganizationEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1326,9 +1336,9 @@ func (ec *executionContext) _OrganizationEdge_cursor(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalNCursor2string(ctx, field.Selections, res)
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OrganizationEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1344,7 +1354,7 @@ func (ec *executionContext) fieldContext_OrganizationEdge_cursor(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1388,7 +1398,7 @@ func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1432,7 +1442,7 @@ func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1455,9 +1465,9 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalOCursor2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1473,7 +1483,7 @@ func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *entgql.PageInfo[int]) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_endCursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1496,9 +1506,9 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalOCursor2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1514,7 +1524,7 @@ func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Photo_id(ctx context.Context, field graphql.CollectedField, obj *model.Photo) (ret graphql.Marshaler) {
+func (ec *executionContext) _Photo_id(ctx context.Context, field graphql.CollectedField, obj *ent.Photo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Photo_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1540,9 +1550,9 @@ func (ec *executionContext) _Photo_id(ctx context.Context, field graphql.Collect
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Photo_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1558,7 +1568,7 @@ func (ec *executionContext) fieldContext_Photo_id(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _Photo_name(ctx context.Context, field graphql.CollectedField, obj *model.Photo) (ret graphql.Marshaler) {
+func (ec *executionContext) _Photo_name(ctx context.Context, field graphql.CollectedField, obj *ent.Photo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Photo_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1602,7 +1612,7 @@ func (ec *executionContext) fieldContext_Photo_name(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Photo_url(ctx context.Context, field graphql.CollectedField, obj *model.Photo) (ret graphql.Marshaler) {
+func (ec *executionContext) _Photo_url(ctx context.Context, field graphql.CollectedField, obj *ent.Photo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Photo_url(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1646,7 +1656,7 @@ func (ec *executionContext) fieldContext_Photo_url(_ context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Photo_user(ctx context.Context, field graphql.CollectedField, obj *model.Photo) (ret graphql.Marshaler) {
+func (ec *executionContext) _Photo_user(ctx context.Context, field graphql.CollectedField, obj *ent.Photo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Photo_user(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1660,7 +1670,7 @@ func (ec *executionContext) _Photo_user(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
+		return obj.User(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1669,16 +1679,16 @@ func (ec *executionContext) _Photo_user(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Photo_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Photo",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
@@ -1711,7 +1721,7 @@ func (ec *executionContext) fieldContext_Photo_user(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotoConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.PhotoConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotoConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.PhotoConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotoConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1734,9 +1744,9 @@ func (ec *executionContext) _PhotoConnection_edges(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.PhotoEdge)
+	res := resTmp.([]*ent.PhotoEdge)
 	fc.Result = res
-	return ec.marshalOPhotoEdge2ᚕᚖapiᚋgraphᚋmodelᚐPhotoEdge(ctx, field.Selections, res)
+	return ec.marshalOPhotoEdge2ᚕᚖapiᚋentᚐPhotoEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PhotoConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1758,7 +1768,7 @@ func (ec *executionContext) fieldContext_PhotoConnection_edges(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotoConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.PhotoConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotoConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.PhotoConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotoConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1784,9 +1794,9 @@ func (ec *executionContext) _PhotoConnection_pageInfo(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(entgql.PageInfo[int])
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖapiᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PhotoConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1812,7 +1822,7 @@ func (ec *executionContext) fieldContext_PhotoConnection_pageInfo(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotoConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.PhotoConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotoConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.PhotoConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotoConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1856,7 +1866,7 @@ func (ec *executionContext) fieldContext_PhotoConnection_totalCount(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotoEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.PhotoEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotoEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.PhotoEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotoEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1879,9 +1889,9 @@ func (ec *executionContext) _PhotoEdge_node(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Photo)
+	res := resTmp.(*ent.Photo)
 	fc.Result = res
-	return ec.marshalOPhoto2ᚖapiᚋgraphᚋmodelᚐPhoto(ctx, field.Selections, res)
+	return ec.marshalOPhoto2ᚖapiᚋentᚐPhoto(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PhotoEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1907,7 +1917,7 @@ func (ec *executionContext) fieldContext_PhotoEdge_node(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _PhotoEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.PhotoEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _PhotoEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.PhotoEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PhotoEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1933,9 +1943,9 @@ func (ec *executionContext) _PhotoEdge_cursor(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalNCursor2string(ctx, field.Selections, res)
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PhotoEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2072,7 +2082,7 @@ func (ec *executionContext) _Query_organizations(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Organizations(rctx, fc.Args["after"].(*string), fc.Args["first"].(*int), fc.Args["before"].(*string), fc.Args["last"].(*int), fc.Args["where"].(*model.OrganizationWhereInput))
+		return ec.resolvers.Query().Organizations(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.OrganizationWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2084,9 +2094,9 @@ func (ec *executionContext) _Query_organizations(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.OrganizationConnection)
+	res := resTmp.(*ent.OrganizationConnection)
 	fc.Result = res
-	return ec.marshalNOrganizationConnection2ᚖapiᚋgraphᚋmodelᚐOrganizationConnection(ctx, field.Selections, res)
+	return ec.marshalNOrganizationConnection2ᚖapiᚋentᚐOrganizationConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_organizations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2135,7 +2145,7 @@ func (ec *executionContext) _Query_photos(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Photos(rctx, fc.Args["after"].(*string), fc.Args["first"].(*int), fc.Args["before"].(*string), fc.Args["last"].(*int), fc.Args["where"].(*model.PhotoWhereInput))
+		return ec.resolvers.Query().Photos(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["where"].(*ent.PhotoWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2147,9 +2157,9 @@ func (ec *executionContext) _Query_photos(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PhotoConnection)
+	res := resTmp.(*ent.PhotoConnection)
 	fc.Result = res
-	return ec.marshalNPhotoConnection2ᚖapiᚋgraphᚋmodelᚐPhotoConnection(ctx, field.Selections, res)
+	return ec.marshalNPhotoConnection2ᚖapiᚋentᚐPhotoConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_photos(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2198,7 +2208,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*string), fc.Args["first"].(*int), fc.Args["before"].(*string), fc.Args["last"].(*int), fc.Args["where"].(*model.UserWhereInput))
+		return ec.resolvers.Query().Users(rctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].(*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2210,9 +2220,9 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.UserConnection)
+	res := resTmp.(*ent.UserConnection)
 	fc.Result = res
-	return ec.marshalNUserConnection2ᚖapiᚋgraphᚋmodelᚐUserConnection(ctx, field.Selections, res)
+	return ec.marshalNUserConnection2ᚖapiᚋentᚐUserConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2376,7 +2386,7 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2402,9 +2412,9 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2420,7 +2430,7 @@ func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphq
 	return fc, nil
 }
 
-func (ec *executionContext) _User_sid(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_sid(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_sid(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2464,7 +2474,7 @@ func (ec *executionContext) fieldContext_User_sid(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_uid(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2508,7 +2518,7 @@ func (ec *executionContext) fieldContext_User_uid(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2552,7 +2562,7 @@ func (ec *executionContext) fieldContext_User_name(_ context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_email(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2596,7 +2606,7 @@ func (ec *executionContext) fieldContext_User_email(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _User_roleType(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_roleType(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_roleType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2640,7 +2650,7 @@ func (ec *executionContext) fieldContext_User_roleType(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _User_statusType(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_statusType(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_statusType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2684,7 +2694,7 @@ func (ec *executionContext) fieldContext_User_statusType(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _User_oauthType(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_oauthType(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_oauthType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2728,7 +2738,7 @@ func (ec *executionContext) fieldContext_User_oauthType(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _User_sub(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_sub(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_sub(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2751,9 +2761,9 @@ func (ec *executionContext) _User_sub(ctx context.Context, field graphql.Collect
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_sub(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2769,7 +2779,7 @@ func (ec *executionContext) fieldContext_User_sub(_ context.Context, field graph
 	return fc, nil
 }
 
-func (ec *executionContext) _User_photos(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_photos(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_photos(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2783,7 +2793,7 @@ func (ec *executionContext) _User_photos(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Photos, nil
+		return obj.Photos(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2792,16 +2802,16 @@ func (ec *executionContext) _User_photos(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Photo)
+	res := resTmp.([]*ent.Photo)
 	fc.Result = res
-	return ec.marshalOPhoto2ᚕᚖapiᚋgraphᚋmodelᚐPhotoᚄ(ctx, field.Selections, res)
+	return ec.marshalOPhoto2ᚕᚖapiᚋentᚐPhotoᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_photos(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
@@ -2820,7 +2830,7 @@ func (ec *executionContext) fieldContext_User_photos(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _User_organization(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_organization(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_organization(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2834,7 +2844,7 @@ func (ec *executionContext) _User_organization(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Organization, nil
+		return obj.Organization(ctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2843,16 +2853,16 @@ func (ec *executionContext) _User_organization(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Organization)
+	res := resTmp.(*ent.Organization)
 	fc.Result = res
-	return ec.marshalOOrganization2ᚖapiᚋgraphᚋmodelᚐOrganization(ctx, field.Selections, res)
+	return ec.marshalOOrganization2ᚖapiᚋentᚐOrganization(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_organization(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
@@ -2869,7 +2879,7 @@ func (ec *executionContext) fieldContext_User_organization(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_edges(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2892,9 +2902,9 @@ func (ec *executionContext) _UserConnection_edges(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.UserEdge)
+	res := resTmp.([]*ent.UserEdge)
 	fc.Result = res
-	return ec.marshalOUserEdge2ᚕᚖapiᚋgraphᚋmodelᚐUserEdge(ctx, field.Selections, res)
+	return ec.marshalOUserEdge2ᚕᚖapiᚋentᚐUserEdge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2916,7 +2926,7 @@ func (ec *executionContext) fieldContext_UserConnection_edges(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_pageInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -2942,9 +2952,9 @@ func (ec *executionContext) _UserConnection_pageInfo(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(entgql.PageInfo[int])
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖapiᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2970,7 +2980,7 @@ func (ec *executionContext) fieldContext_UserConnection_pageInfo(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _UserConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.UserConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.UserConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserConnection_totalCount(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3014,7 +3024,7 @@ func (ec *executionContext) fieldContext_UserConnection_totalCount(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.UserEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.UserEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserEdge_node(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3037,9 +3047,9 @@ func (ec *executionContext) _UserEdge_node(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*ent.User)
 	fc.Result = res
-	return ec.marshalOUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖapiᚋentᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3079,7 +3089,7 @@ func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.UserEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.UserEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UserEdge_cursor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -3105,9 +3115,9 @@ func (ec *executionContext) _UserEdge_cursor(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(entgql.Cursor[int])
 	fc.Result = res
-	return ec.marshalNCursor2string(ctx, field.Selections, res)
+	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4896,8 +4906,8 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputCreateOrganizationInput(ctx context.Context, obj interface{}) (model.CreateOrganizationInput, error) {
-	var it model.CreateOrganizationInput
+func (ec *executionContext) unmarshalInputCreateOrganizationInput(ctx context.Context, obj interface{}) (ent.CreateOrganizationInput, error) {
+	var it ent.CreateOrganizationInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -4919,7 +4929,7 @@ func (ec *executionContext) unmarshalInputCreateOrganizationInput(ctx context.Co
 			it.Name = data
 		case "userIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4930,8 +4940,8 @@ func (ec *executionContext) unmarshalInputCreateOrganizationInput(ctx context.Co
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreatePhotoInput(ctx context.Context, obj interface{}) (model.CreatePhotoInput, error) {
-	var it model.CreatePhotoInput
+func (ec *executionContext) unmarshalInputCreatePhotoInput(ctx context.Context, obj interface{}) (ent.CreatePhotoInput, error) {
+	var it ent.CreatePhotoInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -4960,7 +4970,7 @@ func (ec *executionContext) unmarshalInputCreatePhotoInput(ctx context.Context, 
 			it.URL = data
 		case "userID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4971,8 +4981,8 @@ func (ec *executionContext) unmarshalInputCreatePhotoInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj interface{}) (model.CreateUserInput, error) {
-	var it model.CreateUserInput
+func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj interface{}) (ent.CreateUserInput, error) {
+	var it ent.CreateUserInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5050,14 +5060,14 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 			it.Sub = data
 		case "photoIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("photoIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.PhotoIDs = data
 		case "organizationID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("organizationID"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5068,8 +5078,8 @@ func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Context, obj interface{}) (model.OrganizationWhereInput, error) {
-	var it model.OrganizationWhereInput
+func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Context, obj interface{}) (ent.OrganizationWhereInput, error) {
+	var it ent.OrganizationWhereInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5084,81 +5094,81 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 		switch k {
 		case "not":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			data, err := ec.unmarshalOOrganizationWhereInput2ᚖapiᚋgraphᚋmodelᚐOrganizationWhereInput(ctx, v)
+			data, err := ec.unmarshalOOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Not = data
 		case "and":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋentᚐOrganizationWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "or":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋentᚐOrganizationWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "idNEQ":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDNeq = data
+			it.IDNEQ = data
 		case "idIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDIn = data
 		case "idNotIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDNotIn = data
 		case "idGT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGt = data
+			it.IDGT = data
 		case "idGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGte = data
+			it.IDGTE = data
 		case "idLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLt = data
+			it.IDLT = data
 		case "idLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLte = data
+			it.IDLTE = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5172,7 +5182,7 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.NameNeq = data
+			it.NameNEQ = data
 		case "nameIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -5193,28 +5203,28 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-			it.NameGt = data
+			it.NameGT = data
 		case "nameGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameGte = data
+			it.NameGTE = data
 		case "nameLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLt = data
+			it.NameLT = data
 		case "nameLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLte = data
+			it.NameLTE = data
 		case "nameContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5259,7 +5269,7 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 			it.HasUsers = data
 		case "hasUsersWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUsersWith"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐUserWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5270,8 +5280,8 @@ func (ec *executionContext) unmarshalInputOrganizationWhereInput(ctx context.Con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, obj interface{}) (model.PhotoWhereInput, error) {
-	var it model.PhotoWhereInput
+func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, obj interface{}) (ent.PhotoWhereInput, error) {
+	var it ent.PhotoWhereInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5286,81 +5296,81 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 		switch k {
 		case "not":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			data, err := ec.unmarshalOPhotoWhereInput2ᚖapiᚋgraphᚋmodelᚐPhotoWhereInput(ctx, v)
+			data, err := ec.unmarshalOPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Not = data
 		case "and":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐPhotoWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋentᚐPhotoWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "or":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐPhotoWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋentᚐPhotoWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "idNEQ":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDNeq = data
+			it.IDNEQ = data
 		case "idIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDIn = data
 		case "idNotIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDNotIn = data
 		case "idGT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGt = data
+			it.IDGT = data
 		case "idGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGte = data
+			it.IDGTE = data
 		case "idLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLt = data
+			it.IDLT = data
 		case "idLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLte = data
+			it.IDLTE = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5374,7 +5384,7 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-			it.NameNeq = data
+			it.NameNEQ = data
 		case "nameIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -5395,28 +5405,28 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-			it.NameGt = data
+			it.NameGT = data
 		case "nameGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameGte = data
+			it.NameGTE = data
 		case "nameLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLt = data
+			it.NameLT = data
 		case "nameLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLte = data
+			it.NameLTE = data
 		case "nameContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5465,7 +5475,7 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-			it.URLNeq = data
+			it.URLNEQ = data
 		case "urlIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -5486,28 +5496,28 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-			it.URLGt = data
+			it.URLGT = data
 		case "urlGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.URLGte = data
+			it.URLGTE = data
 		case "urlLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.URLLt = data
+			it.URLLT = data
 		case "urlLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.URLLte = data
+			it.URLLTE = data
 		case "urlContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5552,7 +5562,7 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 			it.HasUser = data
 		case "hasUserWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUserWith"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐUserWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5563,8 +5573,8 @@ func (ec *executionContext) unmarshalInputPhotoWhereInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateOrganizationInput(ctx context.Context, obj interface{}) (model.UpdateOrganizationInput, error) {
-	var it model.UpdateOrganizationInput
+func (ec *executionContext) unmarshalInputUpdateOrganizationInput(ctx context.Context, obj interface{}) (ent.UpdateOrganizationInput, error) {
+	var it ent.UpdateOrganizationInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5586,21 +5596,21 @@ func (ec *executionContext) unmarshalInputUpdateOrganizationInput(ctx context.Co
 			it.Name = data
 		case "addUserIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addUserIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.AddUserIDs = data
 		case "removeUserIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeUserIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.RemoveUserIDs = data
 		case "clearUsers":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearUsers"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5611,8 +5621,8 @@ func (ec *executionContext) unmarshalInputUpdateOrganizationInput(ctx context.Co
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdatePhotoInput(ctx context.Context, obj interface{}) (model.UpdatePhotoInput, error) {
-	var it model.UpdatePhotoInput
+func (ec *executionContext) unmarshalInputUpdatePhotoInput(ctx context.Context, obj interface{}) (ent.UpdatePhotoInput, error) {
+	var it ent.UpdatePhotoInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5641,14 +5651,14 @@ func (ec *executionContext) unmarshalInputUpdatePhotoInput(ctx context.Context, 
 			it.URL = data
 		case "userID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.UserID = data
 		case "clearUser":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearUser"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5659,8 +5669,8 @@ func (ec *executionContext) unmarshalInputUpdatePhotoInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, obj interface{}) (model.UpdateUserInput, error) {
-	var it model.UpdateUserInput
+func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, obj interface{}) (ent.UpdateUserInput, error) {
+	var it ent.UpdateUserInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5710,7 +5720,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 			it.Password = data
 		case "clearPassword":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearPassword"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5745,42 +5755,42 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 			it.Sub = data
 		case "clearSub":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearSub"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ClearSub = data
 		case "addPhotoIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addPhotoIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.AddPhotoIDs = data
 		case "removePhotoIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removePhotoIDs"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.RemovePhotoIDs = data
 		case "clearPhotos":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearPhotos"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ClearPhotos = data
 		case "organizationID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("organizationID"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.OrganizationID = data
 		case "clearOrganization":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearOrganization"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5791,8 +5801,46 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, obj interface{}) (model.UserWhereInput, error) {
-	var it model.UserWhereInput
+func (ec *executionContext) unmarshalInputUserOrder(ctx context.Context, obj interface{}) (ent.UserOrder, error) {
+	var it ent.UserOrder
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNUserOrderField2ᚖapiᚋentᚐUserOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, obj interface{}) (ent.UserWhereInput, error) {
+	var it ent.UserWhereInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -5807,81 +5855,81 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		switch k {
 		case "not":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
-			data, err := ec.unmarshalOUserWhereInput2ᚖapiᚋgraphᚋmodelᚐUserWhereInput(ctx, v)
+			data, err := ec.unmarshalOUserWhereInput2ᚖapiᚋentᚐUserWhereInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Not = data
 		case "and":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐUserWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.And = data
 		case "or":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐUserWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖapiᚋentᚐUserWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Or = data
 		case "id":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.ID = data
 		case "idNEQ":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDNeq = data
+			it.IDNEQ = data
 		case "idIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDIn = data
 		case "idNotIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
-			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.IDNotIn = data
 		case "idGT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGt = data
+			it.IDGT = data
 		case "idGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDGte = data
+			it.IDGTE = data
 		case "idLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLt = data
+			it.IDLT = data
 		case "idLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.IDLte = data
+			it.IDLTE = data
 		case "sid":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sid"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5895,7 +5943,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.SidNeq = data
+			it.SidNEQ = data
 		case "sidIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sidIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -5916,28 +5964,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.SidGt = data
+			it.SidGT = data
 		case "sidGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sidGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SidGte = data
+			it.SidGTE = data
 		case "sidLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sidLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SidLt = data
+			it.SidLT = data
 		case "sidLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sidLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SidLte = data
+			it.SidLTE = data
 		case "sidContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sidContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -5986,7 +6034,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.UIDNeq = data
+			it.UIDNEQ = data
 		case "uidIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uidIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6007,28 +6055,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.UIDGt = data
+			it.UIDGT = data
 		case "uidGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uidGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UIDGte = data
+			it.UIDGTE = data
 		case "uidLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uidLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UIDLt = data
+			it.UIDLT = data
 		case "uidLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uidLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.UIDLte = data
+			it.UIDLTE = data
 		case "uidContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uidContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6077,7 +6125,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.NameNeq = data
+			it.NameNEQ = data
 		case "nameIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6098,28 +6146,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.NameGt = data
+			it.NameGT = data
 		case "nameGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameGte = data
+			it.NameGTE = data
 		case "nameLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLt = data
+			it.NameLT = data
 		case "nameLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.NameLte = data
+			it.NameLTE = data
 		case "nameContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6168,7 +6216,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.EmailNeq = data
+			it.EmailNEQ = data
 		case "emailIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6189,28 +6237,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.EmailGt = data
+			it.EmailGT = data
 		case "emailGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.EmailGte = data
+			it.EmailGTE = data
 		case "emailLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.EmailLt = data
+			it.EmailLT = data
 		case "emailLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.EmailLte = data
+			it.EmailLTE = data
 		case "emailContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("emailContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6259,7 +6307,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.RoleTypeNeq = data
+			it.RoleTypeNEQ = data
 		case "roleTypeIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleTypeIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6280,28 +6328,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.RoleTypeGt = data
+			it.RoleTypeGT = data
 		case "roleTypeGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleTypeGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.RoleTypeGte = data
+			it.RoleTypeGTE = data
 		case "roleTypeLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleTypeLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.RoleTypeLt = data
+			it.RoleTypeLT = data
 		case "roleTypeLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleTypeLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.RoleTypeLte = data
+			it.RoleTypeLTE = data
 		case "roleTypeContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roleTypeContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6350,7 +6398,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.StatusTypeNeq = data
+			it.StatusTypeNEQ = data
 		case "statusTypeIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusTypeIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6371,28 +6419,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.StatusTypeGt = data
+			it.StatusTypeGT = data
 		case "statusTypeGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusTypeGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.StatusTypeGte = data
+			it.StatusTypeGTE = data
 		case "statusTypeLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusTypeLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.StatusTypeLt = data
+			it.StatusTypeLT = data
 		case "statusTypeLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusTypeLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.StatusTypeLte = data
+			it.StatusTypeLTE = data
 		case "statusTypeContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statusTypeContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6441,7 +6489,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.OauthTypeNeq = data
+			it.OauthTypeNEQ = data
 		case "oauthTypeIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthTypeIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6462,28 +6510,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.OauthTypeGt = data
+			it.OauthTypeGT = data
 		case "oauthTypeGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthTypeGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.OauthTypeGte = data
+			it.OauthTypeGTE = data
 		case "oauthTypeLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthTypeLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.OauthTypeLt = data
+			it.OauthTypeLT = data
 		case "oauthTypeLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthTypeLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.OauthTypeLte = data
+			it.OauthTypeLTE = data
 		case "oauthTypeContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oauthTypeContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6532,7 +6580,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.SubNeq = data
+			it.SubNEQ = data
 		case "subIn":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -6553,28 +6601,28 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-			it.SubGt = data
+			it.SubGT = data
 		case "subGTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SubGte = data
+			it.SubGTE = data
 		case "subLT":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SubLt = data
+			it.SubLT = data
 		case "subLTE":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SubLte = data
+			it.SubLTE = data
 		case "subContains":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -6598,14 +6646,14 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			it.SubHasSuffix = data
 		case "subIsNil":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subIsNil"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.SubIsNil = data
 		case "subNotNil":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subNotNil"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6633,7 +6681,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			it.HasPhotos = data
 		case "hasPhotosWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPhotosWith"))
-			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐPhotoWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOPhotoWhereInput2ᚕᚖapiᚋentᚐPhotoWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6647,7 +6695,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			it.HasOrganization = data
 		case "hasOrganizationWith":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasOrganizationWith"))
-			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationWhereInputᚄ(ctx, v)
+			data, err := ec.unmarshalOOrganizationWhereInput2ᚕᚖapiᚋentᚐOrganizationWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6666,23 +6714,17 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case model.Organization:
-		return ec._Organization(ctx, sel, &obj)
-	case *model.Organization:
+	case *ent.Organization:
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._Organization(ctx, sel, obj)
-	case model.Photo:
-		return ec._Photo(ctx, sel, &obj)
-	case *model.Photo:
+	case *ent.Photo:
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._Photo(ctx, sel, obj)
-	case model.User:
-		return ec._User(ctx, sel, &obj)
-	case *model.User:
+	case *ent.User:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -6747,7 +6789,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var organizationImplementors = []string{"Organization", "Node"}
 
-func (ec *executionContext) _Organization(ctx context.Context, sel ast.SelectionSet, obj *model.Organization) graphql.Marshaler {
+func (ec *executionContext) _Organization(ctx context.Context, sel ast.SelectionSet, obj *ent.Organization) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, organizationImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6759,15 +6801,46 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 		case "id":
 			out.Values[i] = ec._Organization_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Organization_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "users":
-			out.Values[i] = ec._Organization_users(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Organization_users(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6793,7 +6866,7 @@ func (ec *executionContext) _Organization(ctx context.Context, sel ast.Selection
 
 var organizationConnectionImplementors = []string{"OrganizationConnection"}
 
-func (ec *executionContext) _OrganizationConnection(ctx context.Context, sel ast.SelectionSet, obj *model.OrganizationConnection) graphql.Marshaler {
+func (ec *executionContext) _OrganizationConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.OrganizationConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, organizationConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6839,7 +6912,7 @@ func (ec *executionContext) _OrganizationConnection(ctx context.Context, sel ast
 
 var organizationEdgeImplementors = []string{"OrganizationEdge"}
 
-func (ec *executionContext) _OrganizationEdge(ctx context.Context, sel ast.SelectionSet, obj *model.OrganizationEdge) graphql.Marshaler {
+func (ec *executionContext) _OrganizationEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.OrganizationEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, organizationEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6880,7 +6953,7 @@ func (ec *executionContext) _OrganizationEdge(ctx context.Context, sel ast.Selec
 
 var pageInfoImplementors = []string{"PageInfo"}
 
-func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *entgql.PageInfo[int]) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6928,7 +7001,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 
 var photoImplementors = []string{"Photo", "Node"}
 
-func (ec *executionContext) _Photo(ctx context.Context, sel ast.SelectionSet, obj *model.Photo) graphql.Marshaler {
+func (ec *executionContext) _Photo(ctx context.Context, sel ast.SelectionSet, obj *ent.Photo) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, photoImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -6940,20 +7013,51 @@ func (ec *executionContext) _Photo(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Photo_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Photo_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "url":
 			out.Values[i] = ec._Photo_url(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "user":
-			out.Values[i] = ec._Photo_user(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Photo_user(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6979,7 +7083,7 @@ func (ec *executionContext) _Photo(ctx context.Context, sel ast.SelectionSet, ob
 
 var photoConnectionImplementors = []string{"PhotoConnection"}
 
-func (ec *executionContext) _PhotoConnection(ctx context.Context, sel ast.SelectionSet, obj *model.PhotoConnection) graphql.Marshaler {
+func (ec *executionContext) _PhotoConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.PhotoConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, photoConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7025,7 +7129,7 @@ func (ec *executionContext) _PhotoConnection(ctx context.Context, sel ast.Select
 
 var photoEdgeImplementors = []string{"PhotoEdge"}
 
-func (ec *executionContext) _PhotoEdge(ctx context.Context, sel ast.SelectionSet, obj *model.PhotoEdge) graphql.Marshaler {
+func (ec *executionContext) _PhotoEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.PhotoEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, photoEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7223,7 +7327,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var userImplementors = []string{"User", "Node"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *ent.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7235,49 +7339,111 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._User_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "sid":
 			out.Values[i] = ec._User_sid(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "uid":
 			out.Values[i] = ec._User_uid(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._User_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "roleType":
 			out.Values[i] = ec._User_roleType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "statusType":
 			out.Values[i] = ec._User_statusType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "oauthType":
 			out.Values[i] = ec._User_oauthType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "sub":
 			out.Values[i] = ec._User_sub(ctx, field, obj)
 		case "photos":
-			out.Values[i] = ec._User_photos(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_photos(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "organization":
-			out.Values[i] = ec._User_organization(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_organization(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7303,7 +7469,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var userConnectionImplementors = []string{"UserConnection"}
 
-func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.SelectionSet, obj *model.UserConnection) graphql.Marshaler {
+func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.UserConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7349,7 +7515,7 @@ func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.Selecti
 
 var userEdgeImplementors = []string{"UserEdge"}
 
-func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet, obj *model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.UserEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -7729,18 +7895,28 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCreateUserInput2apiᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v interface{}) (model.CreateUserInput, error) {
+func (ec *executionContext) unmarshalNCreateUserInput2apiᚋentᚐCreateUserInput(ctx context.Context, v interface{}) (ent.CreateUserInput, error) {
 	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCursor2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalString(v)
+func (ec *executionContext) unmarshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (entgql.Cursor[int], error) {
+	var res entgql.Cursor[int]
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCursor2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
+func (ec *executionContext) marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, sel ast.SelectionSet, v entgql.Cursor[int]) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNID2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7849,11 +8025,21 @@ func (ec *executionContext) marshalNNode2ᚕapiᚋentᚐNoder(ctx context.Contex
 	return ret
 }
 
-func (ec *executionContext) marshalNOrganizationConnection2apiᚋgraphᚋmodelᚐOrganizationConnection(ctx context.Context, sel ast.SelectionSet, v model.OrganizationConnection) graphql.Marshaler {
+func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, v interface{}) (entgql.OrderDirection, error) {
+	var res entgql.OrderDirection
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, sel ast.SelectionSet, v entgql.OrderDirection) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNOrganizationConnection2apiᚋentᚐOrganizationConnection(ctx context.Context, sel ast.SelectionSet, v ent.OrganizationConnection) graphql.Marshaler {
 	return ec._OrganizationConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNOrganizationConnection2ᚖapiᚋgraphᚋmodelᚐOrganizationConnection(ctx context.Context, sel ast.SelectionSet, v *model.OrganizationConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNOrganizationConnection2ᚖapiᚋentᚐOrganizationConnection(ctx context.Context, sel ast.SelectionSet, v *ent.OrganizationConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7863,22 +8049,16 @@ func (ec *executionContext) marshalNOrganizationConnection2ᚖapiᚋgraphᚋmode
 	return ec._OrganizationConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOrganizationWhereInput2ᚖapiᚋgraphᚋmodelᚐOrganizationWhereInput(ctx context.Context, v interface{}) (*model.OrganizationWhereInput, error) {
+func (ec *executionContext) unmarshalNOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx context.Context, v interface{}) (*ent.OrganizationWhereInput, error) {
 	res, err := ec.unmarshalInputOrganizationWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖapiᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._PageInfo(ctx, sel, v)
+func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v entgql.PageInfo[int]) graphql.Marshaler {
+	return ec._PageInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPhoto2ᚖapiᚋgraphᚋmodelᚐPhoto(ctx context.Context, sel ast.SelectionSet, v *model.Photo) graphql.Marshaler {
+func (ec *executionContext) marshalNPhoto2ᚖapiᚋentᚐPhoto(ctx context.Context, sel ast.SelectionSet, v *ent.Photo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7888,11 +8068,11 @@ func (ec *executionContext) marshalNPhoto2ᚖapiᚋgraphᚋmodelᚐPhoto(ctx con
 	return ec._Photo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPhotoConnection2apiᚋgraphᚋmodelᚐPhotoConnection(ctx context.Context, sel ast.SelectionSet, v model.PhotoConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPhotoConnection2apiᚋentᚐPhotoConnection(ctx context.Context, sel ast.SelectionSet, v ent.PhotoConnection) graphql.Marshaler {
 	return ec._PhotoConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPhotoConnection2ᚖapiᚋgraphᚋmodelᚐPhotoConnection(ctx context.Context, sel ast.SelectionSet, v *model.PhotoConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNPhotoConnection2ᚖapiᚋentᚐPhotoConnection(ctx context.Context, sel ast.SelectionSet, v *ent.PhotoConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7902,7 +8082,7 @@ func (ec *executionContext) marshalNPhotoConnection2ᚖapiᚋgraphᚋmodelᚐPho
 	return ec._PhotoConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPhotoWhereInput2ᚖapiᚋgraphᚋmodelᚐPhotoWhereInput(ctx context.Context, v interface{}) (*model.PhotoWhereInput, error) {
+func (ec *executionContext) unmarshalNPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx context.Context, v interface{}) (*ent.PhotoWhereInput, error) {
 	res, err := ec.unmarshalInputPhotoWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -7922,11 +8102,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNUser2apiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2apiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v ent.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7936,11 +8116,11 @@ func (ec *executionContext) marshalNUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx conte
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNUserConnection2apiᚋgraphᚋmodelᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v model.UserConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNUserConnection2apiᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v ent.UserConnection) graphql.Marshaler {
 	return ec._UserConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUserConnection2ᚖapiᚋgraphᚋmodelᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v *model.UserConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNUserConnection2ᚖapiᚋentᚐUserConnection(ctx context.Context, sel ast.SelectionSet, v *ent.UserConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7950,7 +8130,23 @@ func (ec *executionContext) marshalNUserConnection2ᚖapiᚋgraphᚋmodelᚐUser
 	return ec._UserConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNUserWhereInput2ᚖapiᚋgraphᚋmodelᚐUserWhereInput(ctx context.Context, v interface{}) (*model.UserWhereInput, error) {
+func (ec *executionContext) unmarshalNUserOrderField2ᚖapiᚋentᚐUserOrderField(ctx context.Context, v interface{}) (*ent.UserOrderField, error) {
+	var res = new(ent.UserOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserOrderField2ᚖapiᚋentᚐUserOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.UserOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNUserWhereInput2ᚖapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	res, err := ec.unmarshalInputUserWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
@@ -8234,23 +8430,23 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOCursor2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+func (ec *executionContext) unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (*entgql.Cursor[int], error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalString(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	var res = new(entgql.Cursor[int])
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCursor2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+func (ec *executionContext) marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, sel ast.SelectionSet, v *entgql.Cursor[int]) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	res := graphql.MarshalString(*v)
-	return res
+	return v
 }
 
-func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+func (ec *executionContext) unmarshalOID2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8259,10 +8455,10 @@ func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v int
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]string, len(vSlice))
+	res := make([]int, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNID2int(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -8270,13 +8466,13 @@ func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v int
 	return res, nil
 }
 
-func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+		ret[i] = ec.marshalNID2int(ctx, sel, v[i])
 	}
 
 	for _, e := range ret {
@@ -8288,19 +8484,19 @@ func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
-func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalID(v)
+	res, err := graphql.UnmarshalInt(v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	res := graphql.MarshalID(*v)
+	res := graphql.MarshalInt(*v)
 	return res
 }
 
@@ -8327,14 +8523,14 @@ func (ec *executionContext) marshalONode2apiᚋentᚐNoder(ctx context.Context, 
 	return ec._Node(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOrganization2ᚖapiᚋgraphᚋmodelᚐOrganization(ctx context.Context, sel ast.SelectionSet, v *model.Organization) graphql.Marshaler {
+func (ec *executionContext) marshalOOrganization2ᚖapiᚋentᚐOrganization(ctx context.Context, sel ast.SelectionSet, v *ent.Organization) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Organization(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOOrganizationEdge2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationEdge(ctx context.Context, sel ast.SelectionSet, v []*model.OrganizationEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOrganizationEdge2ᚕᚖapiᚋentᚐOrganizationEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.OrganizationEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8361,7 +8557,7 @@ func (ec *executionContext) marshalOOrganizationEdge2ᚕᚖapiᚋgraphᚋmodel�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOOrganizationEdge2ᚖapiᚋgraphᚋmodelᚐOrganizationEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOOrganizationEdge2ᚖapiᚋentᚐOrganizationEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8375,14 +8571,14 @@ func (ec *executionContext) marshalOOrganizationEdge2ᚕᚖapiᚋgraphᚋmodel�
 	return ret
 }
 
-func (ec *executionContext) marshalOOrganizationEdge2ᚖapiᚋgraphᚋmodelᚐOrganizationEdge(ctx context.Context, sel ast.SelectionSet, v *model.OrganizationEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOOrganizationEdge2ᚖapiᚋentᚐOrganizationEdge(ctx context.Context, sel ast.SelectionSet, v *ent.OrganizationEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._OrganizationEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐOrganizationWhereInputᚄ(ctx context.Context, v interface{}) ([]*model.OrganizationWhereInput, error) {
+func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚕᚖapiᚋentᚐOrganizationWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.OrganizationWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8391,10 +8587,10 @@ func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraph�
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]*model.OrganizationWhereInput, len(vSlice))
+	res := make([]*ent.OrganizationWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNOrganizationWhereInput2ᚖapiᚋgraphᚋmodelᚐOrganizationWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -8402,7 +8598,7 @@ func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚕᚖapiᚋgraph�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚖapiᚋgraphᚋmodelᚐOrganizationWhereInput(ctx context.Context, v interface{}) (*model.OrganizationWhereInput, error) {
+func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚖapiᚋentᚐOrganizationWhereInput(ctx context.Context, v interface{}) (*ent.OrganizationWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8410,7 +8606,7 @@ func (ec *executionContext) unmarshalOOrganizationWhereInput2ᚖapiᚋgraphᚋmo
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPhoto2ᚕᚖapiᚋgraphᚋmodelᚐPhotoᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Photo) graphql.Marshaler {
+func (ec *executionContext) marshalOPhoto2ᚕᚖapiᚋentᚐPhotoᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Photo) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8437,7 +8633,7 @@ func (ec *executionContext) marshalOPhoto2ᚕᚖapiᚋgraphᚋmodelᚐPhotoᚄ(c
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPhoto2ᚖapiᚋgraphᚋmodelᚐPhoto(ctx, sel, v[i])
+			ret[i] = ec.marshalNPhoto2ᚖapiᚋentᚐPhoto(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8457,14 +8653,14 @@ func (ec *executionContext) marshalOPhoto2ᚕᚖapiᚋgraphᚋmodelᚐPhotoᚄ(c
 	return ret
 }
 
-func (ec *executionContext) marshalOPhoto2ᚖapiᚋgraphᚋmodelᚐPhoto(ctx context.Context, sel ast.SelectionSet, v *model.Photo) graphql.Marshaler {
+func (ec *executionContext) marshalOPhoto2ᚖapiᚋentᚐPhoto(ctx context.Context, sel ast.SelectionSet, v *ent.Photo) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Photo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPhotoEdge2ᚕᚖapiᚋgraphᚋmodelᚐPhotoEdge(ctx context.Context, sel ast.SelectionSet, v []*model.PhotoEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOPhotoEdge2ᚕᚖapiᚋentᚐPhotoEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.PhotoEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8491,7 +8687,7 @@ func (ec *executionContext) marshalOPhotoEdge2ᚕᚖapiᚋgraphᚋmodelᚐPhotoE
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPhotoEdge2ᚖapiᚋgraphᚋmodelᚐPhotoEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOPhotoEdge2ᚖapiᚋentᚐPhotoEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8505,14 +8701,14 @@ func (ec *executionContext) marshalOPhotoEdge2ᚕᚖapiᚋgraphᚋmodelᚐPhotoE
 	return ret
 }
 
-func (ec *executionContext) marshalOPhotoEdge2ᚖapiᚋgraphᚋmodelᚐPhotoEdge(ctx context.Context, sel ast.SelectionSet, v *model.PhotoEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOPhotoEdge2ᚖapiᚋentᚐPhotoEdge(ctx context.Context, sel ast.SelectionSet, v *ent.PhotoEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PhotoEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐPhotoWhereInputᚄ(ctx context.Context, v interface{}) ([]*model.PhotoWhereInput, error) {
+func (ec *executionContext) unmarshalOPhotoWhereInput2ᚕᚖapiᚋentᚐPhotoWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.PhotoWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8521,10 +8717,10 @@ func (ec *executionContext) unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodel�
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]*model.PhotoWhereInput, len(vSlice))
+	res := make([]*ent.PhotoWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNPhotoWhereInput2ᚖapiᚋgraphᚋmodelᚐPhotoWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -8532,12 +8728,22 @@ func (ec *executionContext) unmarshalOPhotoWhereInput2ᚕᚖapiᚋgraphᚋmodel�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOPhotoWhereInput2ᚖapiᚋgraphᚋmodelᚐPhotoWhereInput(ctx context.Context, v interface{}) (*model.PhotoWhereInput, error) {
+func (ec *executionContext) unmarshalOPhotoWhereInput2ᚖapiᚋentᚐPhotoWhereInput(ctx context.Context, v interface{}) (*ent.PhotoWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputPhotoWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
@@ -8594,7 +8800,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOUser2ᚕᚖapiᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚕᚖapiᚋentᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8621,7 +8827,7 @@ func (ec *executionContext) marshalOUser2ᚕᚖapiᚋgraphᚋmodelᚐUserᚄ(ctx
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
+			ret[i] = ec.marshalNUser2ᚖapiᚋentᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8641,14 +8847,14 @@ func (ec *executionContext) marshalOUser2ᚕᚖapiᚋgraphᚋmodelᚐUserᚄ(ctx
 	return ret
 }
 
-func (ec *executionContext) marshalOUser2ᚖapiᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖapiᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOUserEdge2ᚕᚖapiᚋgraphᚋmodelᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v []*model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEdge2ᚕᚖapiᚋentᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.UserEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -8675,7 +8881,7 @@ func (ec *executionContext) marshalOUserEdge2ᚕᚖapiᚋgraphᚋmodelᚐUserEdg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOUserEdge2ᚖapiᚋgraphᚋmodelᚐUserEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalOUserEdge2ᚖapiᚋentᚐUserEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -8689,14 +8895,22 @@ func (ec *executionContext) marshalOUserEdge2ᚕᚖapiᚋgraphᚋmodelᚐUserEdg
 	return ret
 }
 
-func (ec *executionContext) marshalOUserEdge2ᚖapiᚋgraphᚋmodelᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v *model.UserEdge) graphql.Marshaler {
+func (ec *executionContext) marshalOUserEdge2ᚖapiᚋentᚐUserEdge(ctx context.Context, sel ast.SelectionSet, v *ent.UserEdge) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._UserEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodelᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*model.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserOrder2ᚖapiᚋentᚐUserOrder(ctx context.Context, v interface{}) (*ent.UserOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖapiᚋentᚐUserWhereInputᚄ(ctx context.Context, v interface{}) ([]*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -8705,10 +8919,10 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodel�
 		vSlice = graphql.CoerceList(v)
 	}
 	var err error
-	res := make([]*model.UserWhereInput, len(vSlice))
+	res := make([]*ent.UserWhereInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNUserWhereInput2ᚖapiᚋgraphᚋmodelᚐUserWhereInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNUserWhereInput2ᚖapiᚋentᚐUserWhereInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -8716,7 +8930,7 @@ func (ec *executionContext) unmarshalOUserWhereInput2ᚕᚖapiᚋgraphᚋmodel�
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOUserWhereInput2ᚖapiᚋgraphᚋmodelᚐUserWhereInput(ctx context.Context, v interface{}) (*model.UserWhereInput, error) {
+func (ec *executionContext) unmarshalOUserWhereInput2ᚖapiᚋentᚐUserWhereInput(ctx context.Context, v interface{}) (*ent.UserWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
