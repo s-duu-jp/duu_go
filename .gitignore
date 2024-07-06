@@ -4,3 +4,7 @@
 
 # backend api
 **/backend/api/tmp
+
+# backend openapi
+**/openapi/tmp
+**/openapi/.openapi-generator
