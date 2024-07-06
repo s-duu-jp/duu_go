@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "api",
+        "type": "go",
+        "request": "launch",
+        "mode": "debug",
+        "program": "${workspaceFolder}/backend/api/main.go",
+        "buildFlags": "-ldflags '-X api/environments.Env=development'"
+      }
+    ]
+}
