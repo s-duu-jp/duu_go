@@ -1,3 +1,6 @@
 # Custom
 .env
 !.devcontainer/.env
+
+# backend api
+**/backend/api/tmp

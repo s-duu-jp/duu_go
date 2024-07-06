@@ -29,7 +29,10 @@
       "extensions": [
         "bierner.markdown-mermaid",
         "eamodio.gitlens",
-        "GitHub.copilot"
+        "GitHub.copilot",
+        "golang.Go",
+        "humao.rest-client",
+        "cweijan.vscode-mysql-client2"
       ]
     }
   }
