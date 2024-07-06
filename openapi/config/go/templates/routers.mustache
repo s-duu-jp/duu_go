@@ -2,40 +2,6 @@
 package {{packageName}}
 
 import (
-	"api/handlers"
-
-	"github.com/gin-gonic/gin"
-)
-
-type {{classname}} struct {
-	handlers handlers.{{classname}}Handlers
-}
-
-func New{{classname}}(handlers handlers.{{classname}}Handlers) {{classname}} {
-	return {{classname}}{handlers: handlers}
-}
-
-{{#operations}}
-{{#operation}}
-// {{httpMethod}} {{{basePathWithoutHost}}}{{{path}}}{{#summary}}
-// {{{.}}} {{/summary}}
-{{#isDeprecated}}
-// Deprecated
-{{/isDeprecated}}
-func (api *{{classname}}) {{nickname}}(c *gin.Context) {
-	api.handlers.{{operationId}}(c)
-}
-{{/operation}}
-{{/operations}}
-```
-
-1. `/workspace/openapi/config/go/templates/routers.mustache`編集
-
-```go
-{{>partial_header}}
-package {{packageName}}
-
-import (
 	"api/config/env"
 	"log"
 	"net/http"
