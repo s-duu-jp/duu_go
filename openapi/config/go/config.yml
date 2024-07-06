@@ -1,0 +1,5 @@
+generatorName: go-gin-server
+templateDir: ./config/go/templates
+inputSpec: ../openapi/openapi.yml
+outputDir: ../backend/api/controllers
+apiPath: restapi
