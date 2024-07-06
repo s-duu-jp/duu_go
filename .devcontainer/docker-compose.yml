@@ -19,6 +19,7 @@ services:
     depends_on:
       - mysql
       - redis
+      - swagger-ui
   mysql:
     container_name: duu_go_mysql
     image: mysql:5.7
@@ -35,5 +36,16 @@ services:
     image: redis:6.2.4
     ports:
       - 6379:6379
+    networks:
+      - duu_go_network
+  swagger-ui:
+    container_name: duu_go_swagger-ui
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8000:8080"
+    volumes:
+      - ../openapi/openapi.yml:/openapi.yml
+    environment:
+      SWAGGER_JSON: /openapi.yml
     networks:
       - duu_go_network
