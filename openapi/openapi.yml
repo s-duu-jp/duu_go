@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: プロダクト名：Sample
+  description: APIの説明
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: ログイン
+      operationId: PostLogin
+      requestBody:
+        description: ログインに必要なユーザー認証情報
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uid:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: pass
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: ログアウト
+      operationId: PostLogout
+      requestBody:
+        description: ログアウトリクエスト（特に必要なデータはなし）
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200':
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Successfully logged out
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: トークン再発行
+      operationId: PostRefreshToken
+      requestBody:
+        description: トークン再発行に必要な情報
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: jwt_refresh_token
+      responses:
+        '200':
+          description: トークン再発行成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: jwt_access_token
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    AuthRequest:
+      type: object
+      properties:
+        uid:
+          type: string
+          x-go-custom-tag: binding:"required"
+        password:
+          type: string
+          x-go-custom-tag: binding:"required"
+  responses:
+    InternalServerError:
+      description: サーバーエラー
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unexpected error
+    Unauthorized:
+      description: 認証失敗
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Invalid credentials
