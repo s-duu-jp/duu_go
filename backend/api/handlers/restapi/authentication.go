@@ -1,4 +1,4 @@
-package impl
+package restapi
 
 import (
 	openapi "api/controllers/restapi"
