@@ -3,7 +3,6 @@ package impl
 import (
 	openapi "api/controllers/restapi"
 
-	"api/handlers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,9 +11,7 @@ import (
 type authenticationHandlersImpl struct {
 }
 
-var _ handlers.AuthenticationAPIHandlers = &authenticationHandlersImpl{}
-
-func NewAuthenticationHandlers() handlers.AuthenticationAPIHandlers {
+func NewAuthenticationHandlers() openapi.AuthenticationAPIHandlers {
 	return &authenticationHandlersImpl{}
 }
 

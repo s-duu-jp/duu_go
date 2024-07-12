@@ -10,16 +10,20 @@
 package openapi
 
 import (
-	"api/handlers"
-
 	"github.com/gin-gonic/gin"
 )
 
-type AuthenticationAPI struct {
-	handlers handlers.AuthenticationAPIHandlers
+type AuthenticationAPIHandlers interface {
+	PostLogin(c *gin.Context)
+	PostLogout(c *gin.Context)
+	PostRefreshToken(c *gin.Context)
 }
 
-func NewAuthenticationAPI(handlers handlers.AuthenticationAPIHandlers) AuthenticationAPI {
+type AuthenticationAPI struct {
+	handlers AuthenticationAPIHandlers
+}
+
+func NewAuthenticationAPI(handlers AuthenticationAPIHandlers) AuthenticationAPI {
 	return AuthenticationAPI{handlers: handlers}
 }
 
