@@ -38,7 +38,8 @@
         "cweijan.vscode-mysql-client2",
         "PulkitGangwar.nextjs-snippets",
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "bierner.markdown-mermaid"
       ]
     }
   }

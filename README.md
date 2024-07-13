@@ -118,3 +118,89 @@ SAMPLE
   // anyを使う理由
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ```
+
+
+# 全体
+```mermaid
+sequenceDiagram
+    participant Client as クライアント（ブラウザ）
+    participant WebSocketServer as WebSocketサーバー
+
+    Client->>WebSocketServer: WebSocket接続要求
+    WebSocketServer-->>Client: WebSocket接続確立
+
+    Client->>Client: ユーザー名とメッセージを入力
+    Client->>WebSocketServer: メッセージ送信
+    WebSocketServer->>WebSocketServer: メッセージを受信してブロードキャスト
+    WebSocketServer->>Client: メッセージをブロードキャスト
+
+    Client->>Client: ブロードキャストされたメッセージを受信して表示
+
+    Client->>WebSocketServer: WebSocket切断要求
+    WebSocketServer-->>Client: WebSocket切断確立
+```
+
+# フロント
+
+```mermaid
+sequenceDiagram
+    participant User as ユーザー
+    participant Client as クライアント（Reactコンポーネント）
+    participant WebSocketServer as WebSocketサーバー
+
+    User->>Client: ページを開く
+    Client->>Client: useEffect()
+    Client->>WebSocketServer: new WebSocket('ws://localhost:3000/chat')
+    WebSocketServer-->>Client: WebSocket接続確立
+    Client->>Client: onmessage() { setMessages() }
+
+    User->>Client: ユーザー名を入力 (setUsername)
+    User->>Client: メッセージを入力 (setMessage)
+    User->>Client: 送信ボタンをクリック (sendMessage)
+    Client->>WebSocketServer: ws.current.send()
+
+    WebSocketServer->>Client: メッセージを受信
+    Client->>Client: onmessage() { setMessages() }
+
+    User->>Client: ページを閉じる
+    Client->>Client: useEffect Cleanup { ws.current.close() }
+    WebSocketServer-->>Client: WebSocket切断確立
+```
+
+# バックエンド
+
+```mermaid
+sequenceDiagram
+    participant Client as クライアント（ブラウザ）
+    participant WebSocketServer as WebSocketサーバー
+    participant HandleConnections as HandleConnections
+    participant HandleMessages as HandleMessages
+    participant BroadcastChannel as ブロードキャストチャンネル
+
+    Client->>WebSocketServer: WebSocket接続要求
+    WebSocketServer->>HandleConnections: HandleConnections()
+    HandleConnections->>Client: WebSocket接続確立
+    HandleConnections->>HandleConnections: clients[ws] = true
+
+    loop メッセージ受信
+        Client->>HandleConnections: メッセージ送信
+        HandleConnections->>HandleConnections: ws.ReadJSON(&msg)
+        HandleConnections->>BroadcastChannel: broadcast <- msg
+    end
+
+    loop メッセージブロードキャスト
+        HandleMessages->>BroadcastChannel: msg = <-broadcast
+        BroadcastChannel->>HandleMessages: メッセージ受信
+        HandleMessages->>HandleMessages: for client := range clients
+        HandleMessages->>Clients: client.WriteJSON(msg)
+        alt エラーが発生した場合
+            HandleMessages->>HandleMessages: log.Printf("error: %v", err)
+            HandleMessages->>HandleMessages: client.Close()
+            HandleMessages->>HandleMessages: delete(clients, client)
+        end
+    end
+
+    Client->>HandleConnections: WebSocket切断
+    HandleConnections->>HandleConnections: delete(clients, ws)
+    HandleConnections->>Client: WebSocket切断確立
+```
