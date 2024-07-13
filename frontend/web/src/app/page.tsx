@@ -21,7 +21,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!id) {
-      console.error('Channel ID is missing');
       return;
     }
 
@@ -36,21 +35,14 @@ export default function Home() {
 
       ws.current.onopen = () => {
         setIsConnected(true);
-        console.log('WebSocket connection established');
       };
 
       ws.current.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log('Received message:', msg);
         setMessages((prevMessages) => [...prevMessages, msg]);
       };
 
-      ws.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-
       ws.current.onclose = (event) => {
-        console.warn('WebSocket closed:', event.code, event.reason);
         setIsConnected(false);
         if (event.code !== 1000) {
           // 再接続ロジック
@@ -74,7 +66,6 @@ export default function Home() {
   const sendMessage = () => {
     if (ws.current && message) {
       const msg = { username, message, channel: id };
-      console.log('Sending message:', msg);
       ws.current.send(JSON.stringify(msg));
       setMessage('');
     }
@@ -83,37 +74,42 @@ export default function Home() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>WebSocket Chat</h1>
-      {channelId && <h2>Room: {channelId}</h2>}
-      <div>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ marginRight: '10px' }}
-        />
-      </div>
-      <div>
-        <textarea
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          style={{ marginRight: '10px', marginTop: '10px', width: '300px', height: '100px' }}
-        />
-      </div>
-      <div>
-        <button onClick={sendMessage} style={{ marginTop: '10px' }} disabled={!isConnected}>
-          Send
-        </button>
-      </div>
-      <div style={{ marginTop: '20px' }}>
-        <h2>Chat</h2>
-        <div style={{ border: '1px solid black', padding: '10px', height: '300px', overflowY: 'scroll' }}>
-          {messages.map((msg, index) => (
-            <p key={index}><strong>{msg.username}:</strong> {msg.message}</p>
-          ))}
-        </div>
-      </div>
+      {/* idがない場合は非表示 */}
+      {channelId && (
+        <>
+          <h2>Room: {channelId}</h2>
+          <div>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ marginRight: '10px' }}
+            />
+          </div>
+          <div>
+            <textarea
+              placeholder="Type a message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              style={{ marginRight: '10px', marginTop: '10px', width: '300px', height: '100px' }}
+            />
+          </div>
+          <div>
+            <button onClick={sendMessage} style={{ marginTop: '10px' }} disabled={!isConnected}>
+              Send
+            </button>
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <h2>Chat</h2>
+            <div style={{ border: '1px solid black', padding: '10px', height: '300px', overflowY: 'scroll' }}>
+              {messages.map((msg, index) => (
+                <p key={index}><strong>{msg.username}:</strong> {msg.message}</p>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
