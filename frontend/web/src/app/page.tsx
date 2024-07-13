@@ -1,35 +1,80 @@
 "use client"
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 interface Message {
   username: string;
   message: string;
+  channel: string;
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [username, setUsername] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
   const ws = useRef<WebSocket | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [channelId, setChannelId] = useState<string | null>(null);
+
+  const id = searchParams.get('id');
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:3000/chat');
+    if (!id) {
+      console.error('Channel ID is missing');
+      return;
+    }
 
-    ws.current.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, msg]);
+    setChannelId(id); // チャネルIDを状態に保存
+
+    const connectWebSocket = () => {
+      if (ws.current) {
+        return; // 既に接続されている場合は何もしない
+      }
+
+      ws.current = new WebSocket(`ws://localhost:3000/chat?id=${id}`);
+
+      ws.current.onopen = () => {
+        setIsConnected(true);
+        console.log('WebSocket connection established');
+      };
+
+      ws.current.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        console.log('Received message:', msg);
+        setMessages((prevMessages) => [...prevMessages, msg]);
+      };
+
+      ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.current.onclose = (event) => {
+        console.warn('WebSocket closed:', event.code, event.reason);
+        setIsConnected(false);
+        if (event.code !== 1000) {
+          // 再接続ロジック
+          setTimeout(() => {
+            connectWebSocket();
+          }, 1000);
+        }
+      };
     };
+
+    connectWebSocket();
 
     return () => {
       if (ws.current) {
         ws.current.close();
+        ws.current = null;
       }
     };
-  }, []);
+  }, [id]);
 
   const sendMessage = () => {
     if (ws.current && message) {
-      const msg = { username, message };
+      const msg = { username, message, channel: id };
+      console.log('Sending message:', msg);
       ws.current.send(JSON.stringify(msg));
       setMessage('');
     }
@@ -38,6 +83,7 @@ export default function Home() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>WebSocket Chat</h1>
+      {channelId && <h2>Room: {channelId}</h2>}
       <div>
         <input
           type="text"
@@ -56,7 +102,9 @@ export default function Home() {
         />
       </div>
       <div>
-        <button onClick={sendMessage} style={{ marginTop: '10px' }}>Send</button>
+        <button onClick={sendMessage} style={{ marginTop: '10px' }} disabled={!isConnected}>
+          Send
+        </button>
       </div>
       <div style={{ marginTop: '20px' }}>
         <h2>Chat</h2>
