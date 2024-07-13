@@ -24,14 +24,21 @@
         "editor.codeActionsOnSave": [
           "source.addMissingImports",
           "source.fixAll.eslint"
-        ]
+        ],
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.formatOnSave": true
+        }
       },
       "extensions": [
         "eamodio.gitlens",
         "GitHub.copilot",
         "golang.Go",
         "humao.rest-client",
-        "cweijan.vscode-mysql-client2"
+        "cweijan.vscode-mysql-client2",
+        "PulkitGangwar.nextjs-snippets",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
       ]
     }
   }
