@@ -2,11 +2,20 @@
 package websocket
 
 import (
+	"context"
 	"log"
 	"net/http"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
 )
+
+var ctx = context.Background()
+
+// Redisクライアントの設定
+var rdb = redis.NewClient(&redis.Options{
+	Addr: "redis:6379",
+})
 
 // WebSocket接続をアップグレードするための設定です。
 // CheckOrigin関数は、すべてのオリジンからの接続を許可します。
@@ -32,7 +41,6 @@ type Message struct {
 
 // HandleConnectionsは、WebSocket接続を処理するハンドラーです。
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
-
 	// クエリパラメータからチャネルIDを取得します。
 	channelID := r.URL.Query().Get("id")
 	// チャネルIDが空の場合は、400 Bad Requestを返します。
@@ -55,6 +63,12 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	// WebSocket接続をマップに追加します。
 	clients[channelID][ws] = true
 
+	// 接続時に過去のメッセージを取得して送信する
+	err = sendPastMessages(ws, channelID)
+	if err != nil {
+		log.Printf("Error sending past messages: %v", err)
+	}
+
 	// メッセージを受信するための無限ループです。
 	for {
 		var msg Message
@@ -66,9 +80,49 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		}
 		// メッセージをブロードキャストします。
 		msg.Channel = channelID
+		// メッセージをRedisに保存する
+		err = saveMessageToRedis(channelID, msg)
+		if err != nil {
+			log.Printf("Error saving message to Redis: %v", err)
+		}
 		// メッセージをブロードキャストするためのチャネルに送信します。
 		broadcast <- msg
 	}
+}
+
+// 過去のメッセージを送信する関数
+func sendPastMessages(ws *websocket.Conn, channelID string) error {
+	// Redisストリームから過去のメッセージを取得する
+	messages, err := rdb.XRange(ctx, channelID, "-", "+").Result()
+	if err != nil {
+		return err
+	}
+
+	// 各メッセージをWebSocket接続に送信する
+	for _, message := range messages {
+		msg := Message{
+			Username: message.Values["username"].(string),
+			Message:  message.Values["message"].(string),
+			Channel:  channelID,
+		}
+		err := ws.WriteJSON(msg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// メッセージをRedisに保存する関数
+func saveMessageToRedis(channelID string, msg Message) error {
+	_, err := rdb.XAdd(ctx, &redis.XAddArgs{
+		Stream: channelID,
+		Values: map[string]interface{}{
+			"username": msg.Username,
+			"message":  msg.Message,
+		},
+	}).Result()
+	return err
 }
 
 func HandleMessages() {
