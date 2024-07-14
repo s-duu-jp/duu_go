@@ -27,21 +27,27 @@ export default function Home() {
     setChannelId(id); // チャネルIDを状態に保存
 
     const connectWebSocket = () => {
-      if (ws.current) {
-        return; // 既に接続されている場合は何もしない
-      }
+      // 既に接続されている場合は何もしない
+      if (ws.current) return
 
+      // 新しいWebSocket接続を作成する
       ws.current = new WebSocket(`ws://localhost:3000/chat?id=${id}`);
 
+
+      // 接続が確立されたときにsetIsConnected(true)を呼び出して接続状態を更新する
       ws.current.onopen = () => {
         setIsConnected(true);
       };
 
+      // 受信したメッセージを処理し、setMessagesを使ってメッセージリストを更新する
       ws.current.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+        console.log(event)
         setMessages((prevMessages) => [...prevMessages, msg]);
       };
 
+      // 接続が閉じられたときにsetIsConnected(false)を呼び出して接続状態を更新します。
+      // 異常終了の場合（event.code !== 1000）、再接続ロジックを使用して1秒後に再接続を試みます。
       ws.current.onclose = (event) => {
         setIsConnected(false);
         if (event.code !== 1000) {
@@ -63,6 +69,7 @@ export default function Home() {
     };
   }, [id]);
 
+  // メッセージを送信する
   const sendMessage = () => {
     if (ws.current && message) {
       const msg = { username, message, channel: id };
